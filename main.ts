@@ -163,6 +163,7 @@ const CMD_RESET_CHANNEL = "AT$RC"         //  For RCZ2, 4: Reset default channel
 const CMD_SEND_MESSAGE = "AT$SF="         //  Prefix to send a message to Sigfox.
 const CMD_SEND_MESSAGE_RESPONSE = ",1"    //  Append to payload if downlink response from Sigfox is needed.
 const CMD_GET_ID = "AT$I=10"              //  Get Sigfox device ID.
+const CMD_GET_PAC = "AT$I=11"             //  Get Sigfox device PAC, used for registering the device.
 const CMD_EMULATOR_DISABLE = "ATS410=0"   //  Device will only talk to Sigfox network.
 const CMD_EMULATOR_ENABLE = "ATS410=1"    //  Device will only talk to SNEK emulator.
 
@@ -233,7 +234,13 @@ function getStepSend(
         processFunc = getDownlink;  //  Process the downlink message.
         sendData2 = F(CMD_SEND_MESSAGE_RESPONSE);  //  Append suffix to payload.
     }
-    addCmd(list, listSize, { F(CMD_SEND_MESSAGE), markers, processFunc, payload, sendData2 });
+    addCmd(list, listSize, {
+        sendData: F(CMD_SEND_MESSAGE),
+        expectedMarkerCount: markers,
+        processFunc: processFunc,
+        payload: payload,
+        sendData2: sendData2
+    });
 }
 
 function getStepPowerChannel(context: NetworkContext, list: Array<NetworkCmd>, listSize: number): void {
