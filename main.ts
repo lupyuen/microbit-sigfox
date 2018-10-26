@@ -184,20 +184,25 @@ function getStepBegin(
     //  Return the list of Wisol AT commands for the Begin Step, to start up the Wisol module.  //  debug(F(" - wisol.getStepBegin"));
     addCmd(list, listSize, {
         //  Set emulation mode.
-        sendData: context.useEmulator        //  If emulator mode,
-            ? F(CMD_EMULATOR_ENABLE)  //  Device will only talk to SNEK emulator.
-            : F(CMD_EMULATOR_DISABLE),//  Else device will only talk to Sigfox network.
-        expectedMarkerCount: 1, processFunc: null,
-        payload: null, sendData2: NULL
+        sendData: context.useEmulator  //  If emulator mode,
+            ? F(CMD_EMULATOR_ENABLE)   //  Device will only talk to SNEK emulator.
+            : F(CMD_EMULATOR_DISABLE), //  Else device will only talk to Sigfox network.
+        expectedMarkerCount: 1,
+        processFunc: null,
+        payload: null, sendData2: null
     });
     //  Get Sigfox device ID and PAC.
     addCmd(list, listSize, {
-        sendData: F(CMD_GET_ID), expectedMarkerCount: 1,
-        processFunc: getID, payload: null, sendData2: NULL
+        sendData: F(CMD_GET_ID),
+        expectedMarkerCount: 1,
+        processFunc: getID,
+        payload: null, sendData2: null
     });
     addCmd(list, listSize, {
-        sendData: F(CMD_GET_PAC), expectedMarkerCount: 1,
-        processFunc: getPAC, payload: null, sendData2: NULL
+        sendData: F(CMD_GET_PAC),
+        expectedMarkerCount: 1,
+        processFunc: getPAC,
+        payload: null, sendData2: null
     });
 }
 
