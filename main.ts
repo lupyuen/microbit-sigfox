@@ -6,7 +6,7 @@ serial.redirect(
 // /////////////////////////////////////////////////////////////////////////
 // From sensor.h Messages sent by Sensor Task
 // containing sensor data will be in this format.
-class SensorMsg {
+interface SensorMsg {
     // Msg_t super; //  Required for all cocoOS messages.
     name: string;   //  3-character name of sensor e.g. tmp, hmd. Includes terminating null.
     data: Array<number>; //  Array of float sensor data values returned by the sensor.
@@ -16,7 +16,7 @@ class SensorMsg {
 // From wisol.h Defines a Wisol AT command string, to
 // be sent via UART Task. Sequence is sendData +
 // payload + sendData2
-class NetworkCmd {
+interface NetworkCmd {
     sendData: string;  //  Command string to be sent, in F() flash memory. 
     expectedMarkerCount: uint8;  //  Wait for this number of markers until timeout.
     payload: string;  //  Additional payload to be sent right after sendData. Note: This is a pointer, not a buffer.
@@ -25,7 +25,7 @@ class NetworkCmd {
 }
 // Network Task maintains this context in the task
 // data.
-class NetworkContext {
+interface NetworkContext {
     uartContext: UARTContext;  //  Context of the UART Task.
     uartTaskID: uint8;  //  Task ID of the UART Task.  Network Task transmits UART data by sending a message to this task.
     zone: number;  //  1 to 4 representing SIGFOX frequencies RCZ 1 to 4.
@@ -56,11 +56,11 @@ class NetworkContext {
 }
 // /////////////////////////////////////////////////////////////////////////
 // From uart.h TODO
-class Evt_t {
+interface Evt_t {
 }
 // UART Task accepts messages of this format for
 // sending data.
-class UARTMsg {
+interface UARTMsg {
     //  Msg_t super;  //  Required for all cocoOS messages.
     sendData: string;  //  Pointer to the string to be sent.
     timeout: number;  //  Send timeout in milliseconds.
@@ -72,7 +72,7 @@ class UARTMsg {
     responseTaskID: uint8;  //  Send to this task ID.
 }
 // UART Task maintains this context in the task data.
-class UARTContext {
+interface UARTContext {
     status: boolean;  //  Return status.  True if successfully sent.
     sendIndex: number;  //  Index of next char to be sent.
     sentTime: number;  //  Timestamp at which we completed sending.
@@ -238,7 +238,12 @@ function getStepPowerChannel(context: NetworkContext, list: Array<NetworkCmd>, l
         case RCZ1:
         case RCZ3:
             //  Set the transceiver output power.
-            addCmd(list, listSize, { F(CMD_OUTPUT_POWER_MAX), 1, NULL, NULL, NULL });
+            addCmd(list, listSize, {
+                sendData: F(CMD_OUTPUT_POWER_MAX),
+                expectedMarkerCount: 1,
+                processFunc: null,
+                payload: null, sendData2: null
+            });
             break;
         case RCZ2:
         case RCZ4: {
@@ -246,12 +251,22 @@ function getStepPowerChannel(context: NetworkContext, list: Array<NetworkCmd>, l
             //  X: boolean value, indicating previous TX macro channel was in the Sigfox default channel
             //  Y: number of micro channel available for next TX request in current macro channel.
             //  Call checkChannel() to check the response.
-            addCmd(list, listSize, { F(CMD_GET_CHANNEL), 1, checkChannel, NULL, NULL });
+            addCmd(list, listSize, {
+                sendData: F(CMD_GET_CHANNEL),
+                expectedMarkerCount: 1,
+                processFunc: checkChannel,
+                payload: null, sendData2: null
+            });
 
             //  If X=0 or Y<3, send CMD_RESET_CHANNEL to reset the device on the default Sigfox macro channel.
             //  Note: Don't use with a duty cycle less than 20 seconds.
             //  Note: checkChannel() will change this command to CMD_NONE if not required.
-            addCmd(list, listSize, { F(CMD_RESET_CHANNEL), 1, NULL, NULL, NULL });
+            addCmd(list, listSize, {
+                sendData: F(CMD_RESET_CHANNEL),
+                expectedMarkerCount: 1,
+                processFunc: null,
+                payload: null, sendData2: null
+            });
             break;
         }
     }
