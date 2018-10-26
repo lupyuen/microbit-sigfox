@@ -3,34 +3,28 @@ serial.redirect(
     SerialPin.P1,
     BaudRate.BaudRate9600
 )
-basic.forever(() => {
-})
-
-///////////////////////////////////////////////////////////////////////////
-//  From sensor.h
-
-//  Messages sent by Sensor Task containing sensor data will be in this format.
+// /////////////////////////////////////////////////////////////////////////
+// From sensor.h Messages sent by Sensor Task
+// containing sensor data will be in this format.
 class SensorMsg {
     // Msg_t super; //  Required for all cocoOS messages.
     name: string;   //  3-character name of sensor e.g. tmp, hmd. Includes terminating null.
     data: Array<number>; //  Array of float sensor data values returned by the sensor.
     count: uint8;        //  Number of float sensor data values returned by the sensor.
-};
-
-///////////////////////////////////////////////////////////////////////////
-//  From wisol.h
-
-//  Defines a Wisol AT command string, to be sent via UART Task. Sequence is
-//    sendData + payload + sendData2
+}
+// /////////////////////////////////////////////////////////////////////////
+// From wisol.h Defines a Wisol AT command string, to
+// be sent via UART Task. Sequence is sendData +
+// payload + sendData2
 class NetworkCmd {
     sendData: string;  //  Command string to be sent, in F() flash memory. 
     expectedMarkerCount: uint8;  //  Wait for this number of markers until timeout.
     payload: string;  //  Additional payload to be sent right after sendData. Note: This is a pointer, not a buffer.
     sendData2: string;  //  Second command string to be sent, in F() flash memory. 
     processFunc: (context: NetworkContext, response: string) => boolean;  //  Function to process the response, NULL if none.
-};
-
-//  Network Task maintains this context in the task data.
+}
+// Network Task maintains this context in the task
+// data.
 class NetworkContext {
     uartContext: UARTContext;  //  Context of the UART Task.
     uartTaskID: uint8;  //  Task ID of the UART Task.  Network Task transmits UART data by sending a message to this task.
@@ -59,12 +53,13 @@ class NetworkContext {
 
     cmdList: Array<NetworkCmd>;  //  List of Wisol AT commands being sent.
     cmdIndex: number;  //  Index of cmdList being sent.
-};
-
-///////////////////////////////////////////////////////////////////////////
-//  From uart.h
-
-//  UART Task accepts messages of this format for sending data.
+}
+// /////////////////////////////////////////////////////////////////////////
+// From uart.h TODO
+class Evt_t {
+}
+// UART Task accepts messages of this format for
+// sending data.
 class UARTMsg {
     //  Msg_t super;  //  Required for all cocoOS messages.
     sendData: string;  //  Pointer to the string to be sent.
@@ -75,9 +70,8 @@ class UARTMsg {
     failureEvent: Evt_t;  //  Event to be triggered upon failure.
     responseMsg: SensorMsg;  //  If not NULL, then send this response message when the response is completed.
     responseTaskID: uint8;  //  Send to this task ID.
-};
-
-//  UART Task maintains this context in the task data.
+}
+// UART Task maintains this context in the task data.
 class UARTContext {
     status: boolean;  //  Return status.  True if successfully sent.
     sendIndex: number;  //  Index of next char to be sent.
@@ -86,14 +80,13 @@ class UARTContext {
     actualMarkerCount: uint8;  //  Actual number of markers received.
     testTimer: number;  //  For testing timer.
     msg: UARTMsg;  //  Message being sent. Set by uart_task() upon receiving a message.
-};
-
-///////////////////////////////////////////////////////////////////////////
-//  From sigfox.h
-
-//  Define the countries (ISO ALPHA-2 country code) and frequencies that are supported.
-//  Based on https://www.sigfox.com/en/coverage, https://www.st.com/content/ccc/resource/technical/document/user_manual/group0/8d/9a/ea/d7/62/06/43/ce/DM00361540/files/DM00361540.pdf/jcr:content/translations/en.DM00361540.pdf
-const RCZ_MASK = (3 << 14)  //  Bits 14-15: RCZ
+}
+// /////////////////////////////////////////////////////////////////////////
+// From sigfox.h Define the countries (ISO ALPHA-2
+// country code) and frequencies that are supported.
+// Based on https://www.sigfox.com/en/coverage,
+// https://www.st.com/content/ccc/resource/technical/document/user_manual/group0/8d/9a/ea/d7/62/06/43/ce/DM00361540/files/DM00361540.pdf/jcr:content/translations/en.DM00361540.pdf
+const RCZ_MASK = (3 << 14)
 const RCZ1 = (0 << 14)
 const RCZ2 = (1 << 14)
 const RCZ3 = (2 << 14)
@@ -149,4 +142,7 @@ enum Country {  //  Bits 0-6: First letter. Bits 7-13: Second letter.
     COUNTRY_GB = RCZ1 + 'G'.charCodeAt(0) + ('B'.charCodeAt(0) << 7),  //  United Kingdom: RCZ1
     COUNTRY_AE = RCZ1 + 'A'.charCodeAt(0) + ('E'.charCodeAt(0) << 7),  //  United Arab Emirates: RCZ1
     COUNTRY_US = RCZ2 + 'U'.charCodeAt(0) + ('S'.charCodeAt(0) << 7),  //  United States of America: RCZ2
-};
+}
+basic.forever(() => {
+
+})
