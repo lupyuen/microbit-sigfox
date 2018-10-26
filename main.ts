@@ -146,3 +146,338 @@ enum Country {  //  Bits 0-6: First letter. Bits 7-13: Second letter.
 basic.forever(() => {
 
 })
+
+function F(s: string) { return s; }
+
+
+// /////////////////////////////////////////////////////////////////////////
+// From wisol.cpp
+
+///////////////////////////////////////////////////////////////////////////////
+//  Define the Wisol AT Commands based on WISOLUserManual_EVBSFM10RxAT_Rev.9_180115.pdf
+
+const CMD_NONE = "AT"                     //  Empty placeholder command.
+const CMD_OUTPUT_POWER_MAX = "ATS302=15"  //  For RCZ1: Set output power to maximum power level.
+const CMD_GET_CHANNEL = "AT$GI?"          //  For RCZ2, 4: Get current and next TX macro channel usage.  Returns X,Y.
+const CMD_RESET_CHANNEL = "AT$RC"         //  For RCZ2, 4: Reset default channel. Send this command if CMD_GET_CHANNEL returns X=0 or Y<3.
+const CMD_SEND_MESSAGE = "AT$SF="         //  Prefix to send a message to Sigfox.
+const CMD_SEND_MESSAGE_RESPONSE = ",1"    //  Append to payload if downlink response from Sigfox is needed.
+const CMD_GET_ID = "AT$I=10"              //  Get Sigfox device ID.
+const CMD_EMULATOR_DISABLE = "ATS410=0"   //  Device will only talk to Sigfox network.
+const CMD_EMULATOR_ENABLE = "ATS410=1"    //  Device will only talk to SNEK emulator.
+
+///////////////////////////////////////////////////////////////////////////////
+//  Wisol Command Steps: A Command Step contains a list of Wisol AT Commands to
+//  be sent for executing the step.  We only implement 2 steps for the Wisol module:
+//  Begin Step -> Send Step
+//  (1) Begin Step: On startup, set the emulation mode and get the device ID and PAC.
+//  (2) Send Step: Send the payload, after setting the TX power and channel. Optional: Request for downlink
+
+//  Each Wisol AT Command added through addCmd() may include a Response Processing
+//  Function e.g. getID(), getPAC().  The function is called with the response text
+//  generated from the Wisol AT Command.
+
+function getStepBegin(
+    context: NetworkContext,
+    list: Array<NetworkCmd>,
+    listSize: number): void {
+    //  Return the list of Wisol AT commands for the Begin Step, to start up the Wisol module.  //  debug(F(" - wisol.getStepBegin"));
+    addCmd(list, listSize, {
+        //  Set emulation mode.
+        sendData: context.useEmulator        //  If emulator mode,
+            ? F(CMD_EMULATOR_ENABLE)  //  Device will only talk to SNEK emulator.
+            : F(CMD_EMULATOR_DISABLE),//  Else device will only talk to Sigfox network.
+        expectedMarkerCount: 1, processFunc: null,
+        payload: null, sendData2: NULL
+    });
+    //  Get Sigfox device ID and PAC.
+    addCmd(list, listSize, {
+        sendData: F(CMD_GET_ID), expectedMarkerCount: 1,
+        processFunc: getID, payload: null, sendData2: NULL
+    });
+    addCmd(list, listSize, {
+        sendData: F(CMD_GET_PAC), expectedMarkerCount: 1,
+        processFunc: getPAC, payload: null, sendData2: NULL
+    });
+}
+
+function getStepSend(
+    context: NetworkContext,
+    list: Array<NetworkCmd>,
+    listSize: number,
+    payload: string,
+    enableDownlink: boolean): void {
+    //  Return the list of Wisol AT commands for the Send Step, to send the payload.
+    //  Payload contains a string of hex digits, up to 24 digits / 12 bytes.
+    //  We prefix with AT$SF= and send to the transceiver.  If enableDownlink is true, we append the
+    //  CMD_SEND_MESSAGE_RESPONSE command to indicate that we expect a downlink repsonse.
+    //  The downlink response message from Sigfox will be returned in the response parameter.
+    //  Warning: This may take up to 1 min to run.  //  debug(F(" - wisol.getStepSend"));
+    //  Set the output power for the zone.
+    getStepPowerChannel(context, list, listSize);
+
+    //  Compose the payload sending command.
+    let markers: uint8 = 1;  //  Wait for 1 line of response.
+    let processFunc: (context: NetworkContext, response: string) => boolean = null;  //  Function to process result.
+    let sendData2: string = null;  //  Text to be appended to payload.
+
+    // If no downlink: Send CMD_SEND_MESSAGE + payload
+    if (enableDownlink) {
+        //  For downlink mode: send CMD_SEND_MESSAGE + payload + CMD_SEND_MESSAGE_RESPONSE
+        markers++;  //  Wait for one more response line.   
+        processFunc = getDownlink;  //  Process the downlink message.
+        sendData2 = F(CMD_SEND_MESSAGE_RESPONSE);  //  Append suffix to payload.
+    }
+    addCmd(list, listSize, { F(CMD_SEND_MESSAGE), markers, processFunc, payload, sendData2 });
+}
+
+function getStepPowerChannel(context: NetworkContext, list: Array<NetworkCmd>, listSize: number): void {
+    //  Return the Wisol AT commands to set the transceiver output power and channel for the zone.
+    //  See WISOLUserManual_EVBSFM10RxAT_Rev.9_180115.pdf, http://kochingchang.blogspot.com/2018/06/minisigfox.html  //  debug(F(" - wisol.getStepPowerChannel"));
+    switch (context.zone) {
+        case RCZ1:
+        case RCZ3:
+            //  Set the transceiver output power.
+            addCmd(list, listSize, { F(CMD_OUTPUT_POWER_MAX), 1, NULL, NULL, NULL });
+            break;
+        case RCZ2:
+        case RCZ4: {
+            //  Get the current and next macro channel usage. Returns X,Y:
+            //  X: boolean value, indicating previous TX macro channel was in the Sigfox default channel
+            //  Y: number of micro channel available for next TX request in current macro channel.
+            //  Call checkChannel() to check the response.
+            addCmd(list, listSize, { F(CMD_GET_CHANNEL), 1, checkChannel, NULL, NULL });
+
+            //  If X=0 or Y<3, send CMD_RESET_CHANNEL to reset the device on the default Sigfox macro channel.
+            //  Note: Don't use with a duty cycle less than 20 seconds.
+            //  Note: checkChannel() will change this command to CMD_NONE if not required.
+            addCmd(list, listSize, { F(CMD_RESET_CHANNEL), 1, NULL, NULL, NULL });
+            break;
+        }
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//  Wisol Response Processing Functions: Called to process response when response 
+//  is received from Wisol AT Command.
+
+function getID(context: NetworkContext, response: string): boolean {
+    //  Save the device ID to context.
+    context.device = response;
+    debug(F(" - wisol.getID: "), context.device);
+    return true;
+}
+
+function getPAC(context: NetworkContext, response: string): boolean {
+    //  Save the PAC code to context.  Note that the PAC is only valid
+    //  for the first registration in the Sigfox portal.  After
+    //  registering the device, the PAC is changed in the Sigfox portal
+    //  but not in the Wisol AT Command.  You must get the updated
+    //  PAC from the Sigfox portal if you wish to transfer the device.
+    context.pac = response;
+    debug(F(" - wisol.getPAC: "), context.pac);
+    return true;
+}
+
+function checkChannel(context: NetworkContext, response: string): boolean {
+    //  Parse the CMD_GET_CHANNEL response "X,Y" to determine if we need to send the CMD_RESET_CHANNEL command.
+    //  If not needed, change the next command to CMD_NONE.
+
+    //  CMD_GET_CHANNEL gets the current and next macro channel usage. Returns X,Y:
+    //  X: boolean value, indicating previous TX macro channel was in the Sigfox default channel
+    //  Y: number of micro channel available for next TX request in current macro channel.
+
+    //  If X=0 or Y<3, send CMD_RESET_CHANNEL to reset the device on the default Sigfox macro channel.
+    //  Note: Don't use with a duty cycle less than 20 seconds.  //  debug(F("checkChannel: "), response);
+    if (response.length < 3) {  //  If too short, return error.
+        debug(F("***** wisol.checkChannel Error: Unknown response "), response);
+        return false;  //  Failure
+    }
+    //  Change chars to numbers.
+    const x = response[0].charCodeAt(0) - '0'.charCodeAt(0);
+    const y = response[2].charCodeAt(0) - '0'.charCodeAt(0);
+    if (x != 0 && y >= 3) {
+        //  No need to reset channel. We change CMD_RESET_CHANNEL to CMD_NONE.  //  debug(F(" - wisol.checkChannel: Continue channel"));
+        let cmdIndex = context.cmdIndex;  //  Current index.
+        cmdIndex++;  //  Next index, to be updated.
+        if (cmdIndex >= MAX_NETWORK_CMD_LIST_SIZE) {
+            debug(F("***** wisol.checkChannel Error: Cmd overflow"));  //  List is full.
+            return false;  //  Failure
+        }
+        if (context.cmdList[cmdIndex].sendData === null) {
+            debug(F("***** wisol.checkChannel Error: Empty cmd"));  //  Not supposed to be empty.
+            return false;  //  Failure
+        }
+        context.cmdList[cmdIndex].sendData = F(CMD_NONE);
+    } else {
+        //  Continue to send CMD_RESET_CHANNEL  //  debug(F(" - wisol.checkChannel: Reset channel"));
+    }
+    return true;  //  Success
+}
+
+// Downlink Server Support: https://backend.sigfox.com/apidocs/callback
+// When a message needs to be acknowledged, the callback selected for the downlink data must 
+// send data in the response. It must contain the 8 bytes data that will be sent to the device 
+// asking for acknowledgment. The data is json formatted, and must be structured as the following :
+//   {"YOUR_DEVICE_ID" : { "downlinkData" : "deadbeefcafebabe"}}    
+// With YOUR_DEVICE_ID being replaced by the corresponding device id, in hexadecimal format, up to 8 digits. 
+// The downlink data must be 8 bytes in hexadecimal format.  For example:
+//   {"002C2EA1" : { "downlinkData" : "0102030405060708"}}
+
+function getDownlink(context: NetworkContext, response0: string): boolean {
+    //  Extract the downlink message and write into the context response.
+    //  context response will be returned as an 8-byte hex string, e.g. "0123456789ABCDEF"
+    //  or a timeout error after 1 min e.g. "ERR_SFX_ERR_SEND_FRAME_WAIT_TIMEOUT"
+
+    //  Get a writeable response pointer in the uartContext.
+    let response = context.uartContext.response;  // debug(F(" - wisol.getDownlink: "), response);
+
+    //  Check the original response.
+    //  If Successful response: OK\nRX=01 23 45 67 89 AB CD EF
+    //  -> Change response to: 0123456789ABCDEF
+    //  If Timeout response: ERR_SFX_ERR_SEND_FRAME_WAIT_TIMEOUT\n
+    //  -> Remove newline: ERR_SFX_ERR_SEND_FRAME_WAIT_TIMEOUT
+
+    //  Remove the prefix and spaces:
+    //    replace "OK\nRX=" by "", replace " " by ""
+    const downlinkPrefix = "OK\nRX=";
+    const foundIndex = response.indexOf(downlinkPrefix);
+    if (foundIndex >= 0) {
+        //  Found the delimiter. Transform <<BEFORE>>OK\nRX=<<AFTER>>
+        //  To <<BEFORE>><<AFTER>>
+        //  foundIndex points to "OK\nRX=".
+
+        //  Shift <<AFTER>> next to <<BEFORE>>.
+        const after = response.substr(foundIndex + downlinkPrefix.length);
+        response = response.substr(0, foundIndex - 1) + after;
+    } else {
+        //  Return error e.g. ERR_SFX_ERR_SEND_FRAME_WAIT_TIMEOUT
+        context.status = false;
+    }
+    //  Remove all spaces.
+    let src = 0, dst = 0;
+    for (; ;) {
+        if (src >= MAX_UART_SEND_MSG_SIZE) break;
+        //  Don't copy spaces and newlines in the source.
+        if (response[src] === ' ' || response[src] === '\n') {
+            src++;
+            continue;
+        }
+        //  Copy only if the indexes are different.
+        if (dst != src) { response[dst] = response[src]; }
+        //  If we have copied the terminating null, quit.
+        if (dst >= response.length) { break; }
+        dst++; src++;  //  Shift to next char.
+    }
+    response = response.substr(0, dst);
+    context.downlinkData = response;
+    return true;
+}
+
+let uartData: string;
+let cmdData: string;
+
+function convertCmdToUART(
+    cmd: NetworkCmd,
+    context: NetworkContext,
+    uartMsg: UARTMsg,
+    successEvent0: Evt_t,
+    failureEvent0: Evt_t,
+    responseMsg: SensorMsg,
+    responseTaskID: uint8): void {
+    //  Convert the Wisol command into a UART message.
+    uartData = "";  //  Clear the dest buffer.
+    uartMsg.timeout = COMMAND_TIMEOUT;
+    uartMsg.responseMsg = null;
+
+    if (cmd.sendData) {
+        //  Append sendData if it exists.
+        cmdData = cmd.sendData;
+        const cmdDataStr = cmdData;
+        uartData = cmdDataStr;  //  Copy the command string.
+    }
+    if (cmd.payload) {
+        //  Append payload if it exists.
+        uartData = uartData + cmd.payload;
+        uartMsg.timeout = UPLINK_TIMEOUT;  //  Increase timeout for uplink.
+        //  If there is payload to send, send the response message when sending is completed.
+        uartMsg.responseMsg = responseMsg;
+        uartMsg.responseTaskID = responseTaskID;
+    }
+    if (cmd.sendData2) {
+        //  Append sendData2 if it exists.  Need to use String class because sendData is in flash memory.
+        cmdData = cmd.sendData2;
+        const cmdDataStr = cmdData;
+        uartData = uartData + cmdDataStr;
+        uartMsg.timeout = DOWNLINK_TIMEOUT;  //  Increase timeout for downlink.
+    }
+    //  Terminate the command with "\r".
+    uartData = uartData + CMD_END;
+    //  Check total msg length.
+    if (uartData.length >= MAX_UART_SEND_MSG_SIZE - 1) {
+        debug_print(F("***** Error: uartData overflow - ")); debug_print(strlen(uartData));
+        debug_print(" / "); debug_println(uartData); debug_flush();
+    }
+    uartMsg.markerChar = END_OF_RESPONSE;
+    uartMsg.expectedMarkerCount = cmd.expectedMarkerCount;
+    uartMsg.successEvent = successEvent0;
+    uartMsg.failureEvent = failureEvent0;
+    uartMsg.sendData = uartData;
+}
+
+function setup_wisol(
+    context: NetworkContext,
+    uartContext: UARTContext,
+    uartTaskID: int8,
+    country0: Country,
+    useEmulator0: boolean): void {
+    //  Init the Wisol context.
+    /*
+    const maxCount = 10;  //  Allow up to 10 tasks to queue for aggregating and sending sensor data.
+    const initValue = 1;  //  Allow only 1 concurrent task for aggregating and sending sensor data.
+    sendSemaphore = sem_counting_create(maxCount, initValue);
+    */
+    context.uartContext = uartContext;
+    context.uartTaskID = uartTaskID;
+    context.country = country0;
+    context.useEmulator = useEmulator0;
+    context.stepBeginFunc = getStepBegin;
+    context.stepSendFunc = getStepSend;
+    context.device = "";  //  Clear the device ID.
+    context.pac = "";     //  Clear the PAC code.
+    context.zone = context.country & RCZ_MASK;  //  Extract the zone from country node.
+    context.lastSend = millis() + SEND_INTERVAL + SEND_INTERVAL;  //  Init the last send time to a high number so that sensor data will wait for Begin Step to complete.
+    context.pendingResponse = false;
+}
+
+function addCmd(list: Array<NetworkCmd>, listSize: number, cmd: NetworkCmd): void {
+    //  Append the UART message to the command list.
+    //  Stop if we have overflowed the list.
+    let i = getCmdIndex(list, listSize);
+    list[i++] = cmd;
+    list[i++] = endOfList;
+}
+
+function getCmdIndex(list: Array<NetworkCmd>, listSize: number): number {
+    //  Given a list of commands, return the index of the next empty element.
+    //  Check index against cmd size.  It must fit 2 more elements:
+    //  The new cmd and the endOfList cmd.
+    let i = 0;
+    for (i = 0;  //  Search all elements in list.
+        list[i].sendData &&   //  Skip no-empty elements.
+        i < listSize - 1;  //  Don't exceed the list size.
+        i++) { }
+    if (i >= listSize - 1) {
+        //  List is full.
+        debug_print(F("***** Error: Cmd list overflow - ")); debug_println(i); debug_flush();
+        i = listSize - 2;
+        if (i < 0) i = 0;
+    }
+    return i;
+}
+
+function createSensorMsg(msg: SensorMsg, name: string): void {
+    //  Populate the msg fields as an empty message.
+    msg.count = 0;  //  No data.
+    msg.name = name;
+}
