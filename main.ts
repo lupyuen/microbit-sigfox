@@ -508,3 +508,19 @@ function createSensorMsg(msg: SensorMsg, name: string): void {
     msg.count = 0;  //  No data.
     msg.name = name;
 }
+
+///////////////////////////////////////// TODO
+
+function debug_print(p1: any, p2?: any): void {
+    debug(p1, p2);
+}
+
+function debug_println(p1: any, p2?: any): void {
+    debug(p1, p2);
+}
+
+function debug_flush(): void {
+}
+
+function debug(p1: any, p2?: any): void {
+}
