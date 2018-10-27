@@ -18,7 +18,7 @@ function network_setup() {
     setup_uart(
         uartContext,  //  Init the context for UART Task.
         uartResponse);
-// Start the Network Task for receiving sensor data
+    // Start the Network Task for receiving sensor data
     // and transmitting to UART Task.
     setup_wisol(
         wisolContext,  //  Init the context for the Network Task.
@@ -27,29 +27,30 @@ function network_setup() {
         Country.COUNTRY_SG,  //  Change this to your country code. Affects the Sigfox frequency used.
         false);
 }
-function task_open()  {
-	
+function task_open() {
+
 }
-function task_close()  {
-	
+function task_close() {
+
 }
 function setup_aggregate() {
     // Clear the aggregated sensor data.
+    sensorData = [];
     for (let i = 0; i < MAX_SENSOR_COUNT; i++) {
         let sensor: SensorMsg = {
             name: "",
             count: 0,
-            data: null,
+            data: [],
         };
-sensorData.push(sensor)
+        sensorData.push(sensor)
     }
 }
 // /////////////////////////////////////// TODO
-function led_toggle()  {
-	
+function led_toggle() {
+
 }
-function debug_flush()  {
-	
+function debug_flush() {
+
 }
 let uartResponse: string = null
 let failureEvent: Evt_t = null
@@ -83,9 +84,9 @@ let ENABLE_DOWNLINK = false
 let MAX_TIMEOUT = 0
 let RESPONSE_SENSOR_NAME = ""
 serial.redirect(
-SerialPin.P0,
-SerialPin.P1,
-BaudRate.BaudRate9600
+    SerialPin.P0,
+    SerialPin.P1,
+    BaudRate.BaudRate9600
 )
 // /////////////////////////////////////////////////////////////////////////
 // From platform.h
@@ -824,23 +825,23 @@ function aggregate_sensor_data(
 
     //  Aggregate the sensor data.  Here we just save the last value for each sensor.
     let savedSensor: SensorMsg = recallSensor(msg.name);
-    debug_print(msg.name, "1a"); ////
+    debug(msg.name, "1a"); ////
     if (!savedSensor) return false;  //  Return error.
-    debug_print(msg.name, "1b"); ////
+    debug(msg.name, "1b"); ////
     copySensorData(savedSensor, msg);  //  Copy the data from the received message into the saved data.
-    debug_print(msg.name, "1c"); ////
+    debug(msg.name, "1c"); ////
 
     //  Throttle the sending.  TODO: Show warning if messages are sent faster than SEND_DELAY.
     let now = millis();
     if ((context.lastSend + SEND_INTERVAL) > now) { return false; }  //  Not ready to send.
     context.lastSend = now + MAX_TIMEOUT;  //  Prevent other requests from trying to send.
-    debug_print(msg.name, "2"); ////
+    debug(msg.name, "2"); ////
 
     //  Create a new Sigfox message. Add a running sequence number to the message.
     payload = "";  //  Empty the message payload.
     let sequenceNumber = 0;
     payload = addPayloadInt(payload, PAYLOAD_SIZE, "seq", sequenceNumber++, 4);
-    debug_print(msg.name, "3"); ////
+    debug(msg.name, "3"); ////
 
     //  Encode the sensor data into a Sigfox message, 4 digits each.
     const sendSensors = ["tmp", "hmd", "alt"];  //  Sensors to be sent.
@@ -852,7 +853,7 @@ function aggregate_sensor_data(
         const scaledData = data * 10.0;  //  Scale up by 10 to send 1 decimal place. So 27.1 becomes 271
         payload = addPayloadInt(payload, PAYLOAD_SIZE, sensorName, scaledData, 4);  //  Add to payload.        
     })
-    debug_print(msg.name, "4"); ////
+    debug(msg.name, "4"); ////
 
     //  If the payload has odd number of digits, pad with '0'.
     const length = payload.length;
@@ -1020,8 +1021,8 @@ network_setup()
 const beginMsg = createSensorMsg(BEGIN_SENSOR_NAME)
 network_task(beginMsg)
 basic.pause(2000)
-let sensorMsg = createSensorMsg("tmp", 12.3)
+let sensorMsg = createSensorMsg("tmp", 23.4)
 network_task(sensorMsg)
 basic.forever(function () {
-	
+
 })
