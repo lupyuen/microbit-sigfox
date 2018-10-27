@@ -702,6 +702,19 @@ function setup_wisol(
     context.zone = context.country & RCZ_MASK;  //  Extract the zone from country node.
     context.lastSend = millis() + SEND_INTERVAL + SEND_INTERVAL;  //  Init the last send time to a high number so that sensor data will wait for Begin Step to complete.
     context.pendingResponse = false;
+
+    //  Populate the command list.
+    cmdList = [];
+    for (let i = 0; i < MAX_NETWORK_CMD_LIST_SIZE; i++) {
+        let cmd: NetworkCmd = {
+            sendData: null,
+            expectedMarkerCount: 0,
+            processFunc: null,
+            payload: null,
+            sendData2: null,
+        };
+        cmdList.push(cmd);
+    }
 }
 function addCmd(list: Array<NetworkCmd>, listSize: number, cmd: NetworkCmd): void {
     //  Append the UART message to the command list.
@@ -954,10 +967,13 @@ function task_open(): void { }
 function task_close(): void { }
 function event_create(): Evt_t { return {}; }
 function event_wait_multiple(mode: number, event1: Evt_t, event2: Evt_t): void { }
-function msg_post(task_id: number, msg: UARTMsg): void { }
 function os_get_running_tid(): number { return 2205; }
 function msg_receive(task_id: number, msg: SensorMsg): void {
     //  TODO
+}
+function msg_post(task_id: number, msg: UARTMsg): void {
+    //  TODO
+    debug(">> msg_post ", msg.sendData)
 }
 
 function debug_print(p1: string, p2?: string): void {
