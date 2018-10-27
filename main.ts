@@ -286,7 +286,7 @@ function network_task(): void {
         ctx().status = true;            //  Assume no error.
         ctx().pendingResponse = false;  //  Assume no need to wait for response.
         ctx().msg = msg;               //  Remember the message until it's sent via UART.  
-        ctx().downlinkData = NULL;      //  No downlink received yet.  
+        ctx().downlinkData = null;      //  No downlink received yet.  
         ctx().cmdList = cmdList;        //  Run the command list.
         ctx().cmdIndex = 0;             //  Start at first command in command list.
         ctx().lastSend = millis() + MAX_TIMEOUT;  //  Set to a high timeout to prevent other requests from attempting to send.
@@ -297,8 +297,8 @@ function network_task(): void {
             ctx().lastSend = millis();  //  Update the last send time.
 
             if (ctx().cmdIndex >= MAX_NETWORK_CMD_LIST_SIZE) { break; }  //  Check that we don't exceed the array bounds.
-            cmd = &(ctx().cmdList[ctx().cmdIndex]);  //  Fetch the current command.        
-            if (cmd.sendData == NULL) { break; }     //  If no more commands to send, stop.
+            cmd = ctx().cmdList[ctx().cmdIndex];  //  Fetch the current command.        
+            if (!cmd.sendData) { break; }     //  If no more commands to send, stop.
 
             //  Convert Wisol command to UART command.
             convertCmdToUART(cmd, ctx(), uartMsg, successEvent, failureEvent, responseMsg, os_get_running_tid());
@@ -317,7 +317,7 @@ function network_task(): void {
             //  Wait for success or failure event then process the response.
             event_wait_multiple(0, successEvent, failureEvent);  //  0 means wait for any event.
             processResponse(ctx());  //  Process the response by calling the response function.
-            if (ctx().status == false) { break; }  //  Quit if the processing failed.
+            if (!ctx().status) { break; }  //  Quit if the processing failed.
 
             //  Command was transmitted successfully. Move to next command.
             ctx().cmdIndex++;  //  Next Wisol command.
