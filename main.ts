@@ -279,6 +279,10 @@ function network_task(msg: SensorMsg): void {
         sem_wait(sendSemaphore);  //  Wait until no other message is being sent. Then lock the semaphore.
         debug(F("net >> Got net"));
 
+        cmdList.forEach(function (value: NetworkCmd, index: number) {
+            debug("cmdList[]=", value.sendData);////            
+        })
+
         //  Init the context.
         ctx().status = true;            //  Assume no error.
         ctx().pendingResponse = false;  //  Assume no need to wait for response.
@@ -298,7 +302,9 @@ function network_task(msg: SensorMsg): void {
             if (!cmd.sendData) { break; }     //  If no more commands to send, stop.
 
             //  Convert Wisol command to UART command.
+            debug("cmd1 ", cmd.sendData);////            
             convertCmdToUART(cmd, ctx(), uartMsg, successEvent, failureEvent, responseMsg, os_get_running_tid());
+            debug("cmd2 ", cmd.sendData);////            
             ctx().lastSend = millis() + uartMsg.timeout;  //  Estimate last send time for the next command.
             ctx().pendingProcessFunc = cmd.processFunc;   //  Call this function to process response later.
 
@@ -715,6 +721,18 @@ function setup_wisol(
         };
         cmdList.push(cmd);
     }
+
+    //  Init the UART message.
+    uartMsg = {
+        sendData: null,
+        timeout: 0,
+        markerChar: 0,
+        expectedMarkerCount: 0,
+        successEvent: null,
+        failureEvent: null,
+        responseMsg: null,
+        responseTaskID: 0,
+    };
 }
 function addCmd(list: Array<NetworkCmd>, listSize: number, cmd: NetworkCmd): void {
     //  Append the UART message to the command list.
