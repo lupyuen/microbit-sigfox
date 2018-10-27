@@ -1,30 +1,55 @@
+let MAX_TIMEOUT = 0
+let SEND_DELAY = 0
+let MAX_MESSAGE_SIZE = 0
+let MAX_DEVICE_CODE_SIZE = 0
+let MAX_DEVICE_ID_SIZE = 0
+let ENABLE_DOWNLINK = false
+let MAX_UART_RESPONSE_MSG_SIZE = 0
+let MAX_PORT_COUNT = 0
+let MAX_SENSOR_COUNT = 0
+function debug_flush()  {
+	
+}
+let cmdList: NetworkCmd[] = []
+let msg: SensorMsg = null
+let responseMsg: SensorMsg = null
+let uartMsg: UARTMsg = null
+let MAX_UART_SEND_MSG_SIZE = 0
+let SEND_INTERVAL = 0
+let MAX_NETWORK_CMD_LIST_SIZE = 0
+let COMMAND_TIMEOUT = 0
+let UPLINK_TIMEOUT = 0
+let DOWNLINK_TIMEOUT = 0
+let CMD_NONE = ""
+let CMD_OUTPUT_POWER_MAX = ""
+let CMD_GET_CHANNEL = ""
+let CMD_RESET_CHANNEL = ""
+let CMD_SEND_MESSAGE = ""
+let CMD_SEND_MESSAGE_RESPONSE = ""
+let CMD_GET_ID = ""
+let CMD_GET_PAC = ""
+let CMD_EMULATOR_DISABLE = ""
+let CMD_EMULATOR_ENABLE = ""
 serial.redirect(
-    SerialPin.P0,
-    SerialPin.P1,
-    BaudRate.BaudRate9600
+SerialPin.P0,
+SerialPin.P1,
+BaudRate.BaudRate9600
 )
-
 // /////////////////////////////////////////////////////////////////////////
-// From platform.h 
-
-const MAX_SENSOR_COUNT = 3             //  Max number of sensors supported.
-const MAX_PORT_COUNT = 4               //  Max number of I/O ports that will be used, e.g. SPI1, I2C1.
-const MAX_UART_SEND_MSG_SIZE = 35      //  Max message length, e.g. 33 chars for AT$SF=0102030405060708090a0b0c,1\r
-const MAX_UART_RESPONSE_MSG_SIZE = 36  //  Max response length, e.g. 36 chars for ERR_SFX_ERR_SEND_FRAME_WAIT_TIMEOUT\r
-
+// From platform.h
+MAX_SENSOR_COUNT = 3
+MAX_PORT_COUNT = 4
+MAX_UART_SEND_MSG_SIZE = 35
+MAX_UART_RESPONSE_MSG_SIZE = 36
 // /////////////////////////////////////////////////////////////////////////
-// From aggregate.h 
-
-// const ENABLE_DOWNLINK = false  //  Uplink data only
-const ENABLE_DOWNLINK = true  //  Uplink data and request for downlink
-
-//  Send a message to network every 20,000 milliseconds = 20 seconds.
-const SEND_INTERVAL = (20 * 1000)
-
+// From aggregate.h const ENABLE_DOWNLINK = false  //
+// Uplink data only
+ENABLE_DOWNLINK = true
+// Send a message to network every 20,000 milliseconds
+// = 20 seconds.
+SEND_INTERVAL = 20 * 1000
 // /////////////////////////////////////////////////////////////////////////
-// From sensor.h 
-
-// Messages sent by Sensor Task
+// From sensor.h Messages sent by Sensor Task
 // containing sensor data will be in this format.
 interface SensorMsg {
     // Msg_t super; //  Required for all cocoOS messages.
@@ -32,15 +57,12 @@ interface SensorMsg {
     data: number[]; //  Array of float sensor data values returned by the sensor.
     count: uint8;        //  Number of float sensor data values returned by the sensor.
 }
-
 // /////////////////////////////////////////////////////////////////////////
-// From wisol.h 
-
-const MAX_NETWORK_CMD_LIST_SIZE = 5  //  Allow up to 4 UART commands to be sent in a single Network Step.
-
-// Defines a Wisol AT command string, to
-// be sent via UART Task. Sequence is sendData +
-// payload + sendData2
+// From wisol.h
+MAX_NETWORK_CMD_LIST_SIZE = 5
+// Defines a Wisol AT command string, to be sent via
+// UART Task. Sequence is sendData + payload +
+// sendData2
 interface NetworkCmd {
     sendData: string;  //  Command string to be sent, in F() flash memory. 
     expectedMarkerCount: uint8;  //  Wait for this number of markers until timeout.
@@ -80,12 +102,9 @@ interface NetworkContext {
     cmdIndex: number;  //  Index of cmdList being sent.
 }
 // /////////////////////////////////////////////////////////////////////////
-// From uart.h 
-
-// TODO
+// From uart.h TODO
 interface Evt_t {
 }
-
 // UART Task accepts messages of this format for
 // sending data.
 interface UARTMsg {
@@ -110,24 +129,22 @@ interface UARTContext {
     msg: UARTMsg;  //  Message being sent. Set by uart_task() upon receiving a message.
 }
 // /////////////////////////////////////////////////////////////////////////
-// From sigfox.h 
-
-const MAX_DEVICE_ID_SIZE = 8     //  Max number of chars in Sigfox device ID.
-const MAX_DEVICE_CODE_SIZE = 16  //  Max number of chars in Sigfox PAC code.
-const MAX_MESSAGE_SIZE = 12      //  Sigfox supports up to 12 bytes per message.
-const SEND_DELAY = (10 * 60 * 1000)  //  According to regulation, messages should be sent only every 10 minutes.
-
-//  Define multiple timeouts for better multitasking.  Uplink to network is slower than normal
-//  commands.  Downlink is slowest, up to 1 minute.
-//  COMMAND_TIMEOUT < UPLINK_TIMEOUT < DOWNLINK_TIMEOUT
-const COMMAND_TIMEOUT = (10 * 1000)  //  Wait up to 10 seconds for simple command response from Sigfox module.
-const UPLINK_TIMEOUT = (20 * 1000)  //  Wait up to 20 seconds for uplink command response from Sigfox module.
-const DOWNLINK_TIMEOUT = (60 * 1000)  //  Wait up to 60 seconds for downlink command response from Sigfox module.
-const MAX_TIMEOUT = DOWNLINK_TIMEOUT  //  Maximum possible timeout.
-
-// Define the countries (ISO ALPHA-2
-// country code) and frequencies that are supported.
-// Based on https://www.sigfox.com/en/coverage,
+// From sigfox.h
+MAX_DEVICE_ID_SIZE = 8
+MAX_DEVICE_CODE_SIZE = 16
+MAX_MESSAGE_SIZE = 12
+SEND_DELAY = 10 * 60 * 1000
+// Define multiple timeouts for better multitasking.
+// Uplink to network is slower than normal commands.
+// Downlink is slowest, up to 1 minute.
+// COMMAND_TIMEOUT < UPLINK_TIMEOUT < DOWNLINK_TIMEOUT
+COMMAND_TIMEOUT = 10 * 1000
+UPLINK_TIMEOUT = 20 * 1000
+DOWNLINK_TIMEOUT = 60 * 1000
+MAX_TIMEOUT = DOWNLINK_TIMEOUT
+// Define the countries (ISO ALPHA-2 country code) and
+// frequencies that are supported. Based on
+// https://www.sigfox.com/en/coverage,
 // https://www.st.com/content/ccc/resource/technical/document/user_manual/group0/8d/9a/ea/d7/62/06/43/ce/DM00361540/files/DM00361540.pdf/jcr:content/translations/en.DM00361540.pdf
 const RCZ_MASK = (3 << 14)
 const RCZ1 = (0 << 14)
@@ -186,53 +203,45 @@ enum Country {  //  Bits 0-6: First letter. Bits 7-13: Second letter.
     COUNTRY_AE = RCZ1 + 'A'.charCodeAt(0) + ('E'.charCodeAt(0) << 7),  //  United Arab Emirates: RCZ1
     COUNTRY_US = RCZ2 + 'U'.charCodeAt(0) + ('S'.charCodeAt(0) << 7),  //  United States of America: RCZ2
 }
-
 // /////////////////////////////////////////////////////////////////////////
 // From wisol.cpp
-
-const END_OF_RESPONSE = '\r'.charCodeAt(0)  //  Character '\r' marks the end of response.
+const END_OF_RESPONSE = '\r'.charCodeAt(0)
 const CMD_END = "\r"
-
 const endOfList: NetworkCmd = {
     sendData: null,
     expectedMarkerCount: 0,
     processFunc: null,
     payload: null,
     sendData2: null
-};  //  Command to indicate end of command list.
-
+};
 let successEvent: Evt_t = {};
 let failureEvent: Evt_t = {};
-let cmdList: NetworkCmd[] = [];  //  Buffer for storing command list. Includes terminating msg.
-let msg: SensorMsg = null;  //  Incoming sensor data message.
-let responseMsg: SensorMsg = null;  //  Pending response message from UART to Wisol.
-let uartMsg: UARTMsg = null;  //  Outgoing UART message containing Wisol command.
-
-///////////////////////////////////////////////////////////////////////////////
-//  Define the Wisol AT Commands based on WISOLUserManual_EVBSFM10RxAT_Rev.9_180115.pdf
-
-const CMD_NONE = "AT"                     //  Empty placeholder command.
-const CMD_OUTPUT_POWER_MAX = "ATS302=15"  //  For RCZ1: Set output power to maximum power level.
-const CMD_GET_CHANNEL = "AT$GI?"          //  For RCZ2, 4: Get current and next TX macro channel usage.  Returns X,Y.
-const CMD_RESET_CHANNEL = "AT$RC"         //  For RCZ2, 4: Reset default channel. Send this command if CMD_GET_CHANNEL returns X=0 or Y<3.
-const CMD_SEND_MESSAGE = "AT$SF="         //  Prefix to send a message to Sigfox.
-const CMD_SEND_MESSAGE_RESPONSE = ",1"    //  Append to payload if downlink response from Sigfox is needed.
-const CMD_GET_ID = "AT$I=10"              //  Get Sigfox device ID.
-const CMD_GET_PAC = "AT$I=11"             //  Get Sigfox device PAC, used for registering the device.
-const CMD_EMULATOR_DISABLE = "ATS410=0"   //  Device will only talk to Sigfox network.
-const CMD_EMULATOR_ENABLE = "ATS410=1"    //  Device will only talk to SNEK emulator.
-
-///////////////////////////////////////////////////////////////////////////////
-//  Wisol Command Steps: A Command Step contains a list of Wisol AT Commands to
-//  be sent for executing the step.  We only implement 2 steps for the Wisol module:
-//  Begin Step -> Send Step
-//  (1) Begin Step: On startup, set the emulation mode and get the device ID and PAC.
-//  (2) Send Step: Send the payload, after setting the TX power and channel. Optional: Request for downlink
-
-//  Each Wisol AT Command added through addCmd() may include a Response Processing
-//  Function e.g. getID(), getPAC().  The function is called with the response text
-//  generated from the Wisol AT Command.
-
+// /////////////////////////////////////////////////////////////////////////////
+// Define the Wisol AT Commands based on
+// WISOLUserManual_EVBSFM10RxAT_Rev.9_180115.pdf
+CMD_NONE = "AT"
+CMD_OUTPUT_POWER_MAX = "ATS302=15"
+CMD_GET_CHANNEL = "AT$GI?"
+CMD_RESET_CHANNEL = "AT$RC"
+CMD_SEND_MESSAGE = "AT$SF="
+CMD_SEND_MESSAGE_RESPONSE = ",1"
+CMD_GET_ID = "AT$I=10"
+CMD_GET_PAC = "AT$I=11"
+CMD_EMULATOR_DISABLE = "ATS410=0"
+CMD_EMULATOR_ENABLE = "ATS410=1"
+// /////////////////////////////////////////////////////////////////////////////
+// Wisol Command Steps: A Command Step contains a list
+// of Wisol AT Commands to be sent for executing the
+// step.  We only implement 2 steps for the Wisol
+// module: Begin Step -> Send Step (1) Begin Step: On
+// startup, set the emulation mode and get the device
+// ID and PAC. (2) Send Step: Send the payload, after
+// setting the TX power and channel. Optional: Request
+// for downlink Each Wisol AT Command added through
+// addCmd() may include a Response Processing Function
+// e.g. getID(), getPAC().  The function is called
+// with the response text generated from the Wisol AT
+// Command.
 function getStepBegin(
     context: NetworkContext,
     list: NetworkCmd[],
@@ -261,7 +270,6 @@ function getStepBegin(
         payload: null, sendData2: null
     });
 }
-
 function getStepSend(
     context: NetworkContext,
     list: NetworkCmd[],
@@ -278,7 +286,7 @@ function getStepSend(
     getStepPowerChannel(context, list, listSize);
 
     //  Compose the payload sending command.
-    let markers: uint8 = 1;  //  Wait for 1 line of response.
+    let markers = 1;  //  Wait for 1 line of response.
     let processFunc: (context: NetworkContext, response: string) => boolean = null;  //  Function to process result.
     let sendData2: string = null;  //  Text to be appended to payload.
 
@@ -297,7 +305,6 @@ function getStepSend(
         sendData2: sendData2
     });
 }
-
 function getStepPowerChannel(context: NetworkContext, list: Array<NetworkCmd>, listSize: number): void {
     //  Return the Wisol AT commands to set the transceiver output power and channel for the zone.
     //  See WISOLUserManual_EVBSFM10RxAT_Rev.9_180115.pdf, http://kochingchang.blogspot.com/2018/06/minisigfox.html  //  debug(F(" - wisol.getStepPowerChannel"));
@@ -338,18 +345,16 @@ function getStepPowerChannel(context: NetworkContext, list: Array<NetworkCmd>, l
         }
     }
 }
-
-///////////////////////////////////////////////////////////////////////////////
-//  Wisol Response Processing Functions: Called to process response when response 
-//  is received from Wisol AT Command.
-
+// /////////////////////////////////////////////////////////////////////////////
+// Wisol Response Processing Functions: Called to
+// process response when response is received from
+// Wisol AT Command.
 function getID(context: NetworkContext, response: string): boolean {
     //  Save the device ID to context.
     context.device = response;
     debug(F(" - wisol.getID: "), context.device);
     return true;
 }
-
 function getPAC(context: NetworkContext, response: string): boolean {
     //  Save the PAC code to context.  Note that the PAC is only valid
     //  for the first registration in the Sigfox portal.  After
@@ -360,7 +365,6 @@ function getPAC(context: NetworkContext, response: string): boolean {
     debug(F(" - wisol.getPAC: "), context.pac);
     return true;
 }
-
 function checkChannel(context: NetworkContext, response: string): boolean {
     //  Parse the CMD_GET_CHANNEL response "X,Y" to determine if we need to send the CMD_RESET_CHANNEL command.
     //  If not needed, change the next command to CMD_NONE.
@@ -396,16 +400,21 @@ function checkChannel(context: NetworkContext, response: string): boolean {
     }
     return true;  //  Success
 }
-
-// Downlink Server Support: https://backend.sigfox.com/apidocs/callback
-// When a message needs to be acknowledged, the callback selected for the downlink data must 
-// send data in the response. It must contain the 8 bytes data that will be sent to the device 
-// asking for acknowledgment. The data is json formatted, and must be structured as the following :
-//   {"YOUR_DEVICE_ID" : { "downlinkData" : "deadbeefcafebabe"}}    
-// With YOUR_DEVICE_ID being replaced by the corresponding device id, in hexadecimal format, up to 8 digits. 
-// The downlink data must be 8 bytes in hexadecimal format.  For example:
-//   {"002C2EA1" : { "downlinkData" : "0102030405060708"}}
-
+// Downlink Server Support:
+// https://backend.sigfox.com/apidocs/callback When a
+// message needs to be acknowledged, the callback
+// selected for the downlink data must send data in
+// the response. It must contain the 8 bytes data that
+// will be sent to the device asking for
+// acknowledgment. The data is json formatted, and
+// must be structured as the following :
+// {"YOUR_DEVICE_ID" : { "downlinkData" :
+// "deadbeefcafebabe"}} With YOUR_DEVICE_ID being
+// replaced by the corresponding device id, in
+// hexadecimal format, up to 8 digits. The downlink
+// data must be 8 bytes in hexadecimal format.  For
+// example: {"002C2EA1" : { "downlinkData" :
+// "0102030405060708"}}
 function getDownlink(context: NetworkContext, response0: string): boolean {
     //  Extract the downlink message and write into the context response.
     //  context response will be returned as an 8-byte hex string, e.g. "0123456789ABCDEF"
@@ -445,6 +454,7 @@ function getDownlink(context: NetworkContext, response0: string): boolean {
     }
     //  Remove all spaces.
     let src = 0, dst = 0;
+    let newResponse = "";
     for (; ;) {
         if (src >= MAX_UART_SEND_MSG_SIZE) break;
         //  Don't copy spaces and newlines in the source.
@@ -452,20 +462,18 @@ function getDownlink(context: NetworkContext, response0: string): boolean {
             src++;
             continue;
         }
-        //  Copy only if the indexes are different.
-        if (dst != src) { response[dst] = response[src]; }
+        //  Copy the character.
+        newResponse = newResponse + response[src];
         //  If we have copied the terminating null, quit.
-        if (dst >= response.length) { break; }
+        ////if (dst >= response.length) { break; }
         dst++; src++;  //  Shift to next char.
     }
-    response = response.substr(0, dst);
+    response = newResponse;
     context.downlinkData = response;
     return true;
 }
-
 let uartData: string;
 let cmdData: string;
-
 function convertCmdToUART(
     cmd: NetworkCmd,
     context: NetworkContext,
@@ -473,7 +481,7 @@ function convertCmdToUART(
     successEvent0: Evt_t,
     failureEvent0: Evt_t,
     responseMsg: SensorMsg,
-    responseTaskID: uint8): void {
+    responseTaskID: number): void {
     //  Convert the Wisol command into a UART message.
     uartData = "";  //  Clear the dest buffer.
     uartMsg.timeout = COMMAND_TIMEOUT;
@@ -496,15 +504,15 @@ function convertCmdToUART(
     if (cmd.sendData2) {
         //  Append sendData2 if it exists.  Need to use String class because sendData is in flash memory.
         cmdData = cmd.sendData2;
-        const cmdDataStr = cmdData;
-        uartData = uartData + cmdDataStr;
+        const cmdDataStr2 = cmdData;
+        uartData = uartData + cmdDataStr2;
         uartMsg.timeout = DOWNLINK_TIMEOUT;  //  Increase timeout for downlink.
     }
     //  Terminate the command with "\r".
     uartData = uartData + CMD_END;
     //  Check total msg length.
     if (uartData.length >= MAX_UART_SEND_MSG_SIZE - 1) {
-        debug_print(F("***** Error: uartData overflow - ")); debug_print(strlen(uartData));
+        debug_print(F("***** Error: uartData overflow - ")); debug_print(uartData.length + "");
         debug_print(" / "); debug_println(uartData); debug_flush();
     }
     uartMsg.markerChar = END_OF_RESPONSE;
@@ -513,11 +521,10 @@ function convertCmdToUART(
     uartMsg.failureEvent = failureEvent0;
     uartMsg.sendData = uartData;
 }
-
 function setup_wisol(
     context: NetworkContext,
     uartContext: UARTContext,
-    uartTaskID: int8,
+    uartTaskID: number,
     country0: Country,
     useEmulator0: boolean): void {
     //  Init the Wisol context.
@@ -538,61 +545,50 @@ function setup_wisol(
     context.lastSend = millis() + SEND_INTERVAL + SEND_INTERVAL;  //  Init the last send time to a high number so that sensor data will wait for Begin Step to complete.
     context.pendingResponse = false;
 }
-
 function addCmd(list: Array<NetworkCmd>, listSize: number, cmd: NetworkCmd): void {
     //  Append the UART message to the command list.
     //  Stop if we have overflowed the list.
-    let i = getCmdIndex(list, listSize);
-    list[i++] = cmd;
-    list[i++] = endOfList;
+    let j = getCmdIndex(list, listSize);
+    list[j++] = cmd;
+    list[j++] = endOfList;
 }
-
 function getCmdIndex(list: Array<NetworkCmd>, listSize: number): number {
     //  Given a list of commands, return the index of the next empty element.
     //  Check index against cmd size.  It must fit 2 more elements:
     //  The new cmd and the endOfList cmd.
-    let i = 0;
-    for (i = 0;  //  Search all elements in list.
-        list[i].sendData &&   //  Skip no-empty elements.
-        i < listSize - 1;  //  Don't exceed the list size.
-        i++) { }
-    if (i >= listSize - 1) {
+    let k = 0;
+    for (k = 0;  //  Search all elements in list.
+        list[k].sendData &&   //  Skip no-empty elements.
+        k < listSize - 1;  //  Don't exceed the list size.
+        k++) { }
+    if (k >= listSize - 1) {
         //  List is full.
-        debug_print(F("***** Error: Cmd list overflow - ")); debug_println(i); debug_flush();
-        i = listSize - 2;
-        if (i < 0) i = 0;
+        debug_print(F("***** Error: Cmd list overflow - ")); debug_println(k); debug_flush();
+        k = listSize - 2;
+        if (k < 0) k = 0;
     }
-    return i;
+    return k;
 }
-
 function createSensorMsg(msg: SensorMsg, name: string): void {
     //  Populate the msg fields as an empty message.
     msg.count = 0;  //  No data.
     msg.name = name;
 }
-
-///////////////////////////////////////// TODO
-
-function debug_print(p1: any, p2?: any): void {
+// /////////////////////////////////////// TODO
+function debug_print(p1: string, p2?: string): void {
     debug(p1, p2);
 }
-
-function debug_println(p1: any, p2?: any): void {
+function debug_println(p1: string, p2?: string): void {
     debug(p1, p2);
 }
-
-function debug_flush(): void {
+function debug(p1: string, p2?: string): void {
+    ////  TODO
 }
-
-function debug(p1: any, p2?: any): void {
-}
-
 function F(s: string) { return s; }
-
 function millis(): int32 {
-    return 0;  ////  runningTime();   
+    //  Number of seconds elapsed since power on.
+    return input.runningTime();
 }
-
 basic.forever(() => {
-
+	
 })
