@@ -245,6 +245,7 @@ const endOfList: NetworkCmd = {
     payload: null,
     sendData2: null
 };
+let sendSemaphore: Sem_t = {};
 let successEvent: Evt_t = {};
 let failureEvent: Evt_t = {};
 
@@ -867,6 +868,46 @@ function recallSensor(name: string): SensorMsg {
     sensorData[emptyIndex].data[0] = 0;  //  Reset to 0 in case we need to send.
     return sensorData[emptyIndex];
 }
+
+//  From downlink.cpp
+
+function process_downlink_msg(
+    context: NetworkContext,  //  Task context.
+    status: boolean,          //  True if downlink was received.
+    data: string): boolean {  //  Downlink data (up to 8 bytes in hex e.g. "0102030405060708") or error name.
+    if (status) { debug(F(" - process_downlink_msg: "), data); }
+    else { debug(F(" - process_downlink_msg (Failed): "), data); }
+
+    //  TODO: Add your code here to process the downlink message.
+    return true;  //  Means no error.
+}
+
+//  TODO
+
+let networkContext: NetworkContext = {
+    status: false,
+    sendIndex: 0,
+    sentTime: 0,
+    response: null,
+    actualMarkerCount: 0,
+    testTimer: 0,
+    msg: null,
+};
+function ctx(): NetworkContext { return networkContext; }
+
+interface Sem_t { };
+function sem_wait(sem: Sem_t): void { }
+function sem_signal(sem: Sem_t): void { }
+function task_open(): void { }
+function task_close(): void { }
+function event_create(): Evt_t { return {}; }
+function event_wait_multiple(mode: number, event1: Evt_t, event2: Evt_t): void { }
+function msg_post(task_id: number, msg: UARTMsg): void { }
+function os_get_running_tid(): number { return 2205; }
+function msg_receive(task_id: number, msg: SensorMsg): void {
+    //  TODO
+}
+
 function debug_print(p1: string, p2?: string): void {
     debug(p1, p2);
 }
