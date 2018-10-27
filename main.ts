@@ -18,7 +18,7 @@ function network_setup() {
     setup_uart(
         uartContext,  //  Init the context for UART Task.
         uartResponse);
-    // Start the Network Task for receiving sensor data
+// Start the Network Task for receiving sensor data
     // and transmitting to UART Task.
     setup_wisol(
         wisolContext,  //  Init the context for the Network Task.
@@ -27,11 +27,11 @@ function network_setup() {
         Country.COUNTRY_SG,  //  Change this to your country code. Affects the Sigfox frequency used.
         false);
 }
-function task_open() {
-
+function task_open()  {
+	
 }
-function task_close() {
-
+function task_close()  {
+	
 }
 function setup_aggregate() {
     // Clear the aggregated sensor data.
@@ -41,51 +41,51 @@ function setup_aggregate() {
             count: 0,
             data: null,
         };
-        sensorData.push(sensor)
+sensorData.push(sensor)
     }
 }
 // /////////////////////////////////////// TODO
-function led_toggle() {
-
+function led_toggle()  {
+	
 }
-function debug_flush() {
-
+function debug_flush()  {
+	
 }
-let RESPONSE_SENSOR_NAME = ""
-let MAX_TIMEOUT = 0
-let ENABLE_DOWNLINK = false
-let MAX_SENSOR_COUNT = 0
-let cmdList: NetworkCmd[] = []
-let msg: SensorMsg = null
-let responseMsg: SensorMsg = null
-let uartMsg: UARTMsg = null
-let MAX_UART_SEND_MSG_SIZE = 0
-let SEND_INTERVAL = 0
-let MAX_NETWORK_CMD_LIST_SIZE = 0
-let COMMAND_TIMEOUT = 0
-let UPLINK_TIMEOUT = 0
-let DOWNLINK_TIMEOUT = 0
-let CMD_NONE = ""
-let CMD_OUTPUT_POWER_MAX = ""
-let CMD_GET_CHANNEL = ""
-let CMD_RESET_CHANNEL = ""
-let CMD_SEND_MESSAGE = ""
-let CMD_SEND_MESSAGE_RESPONSE = ""
-let CMD_GET_ID = ""
-let CMD_GET_PAC = ""
-let CMD_EMULATOR_DISABLE = ""
-let CMD_EMULATOR_ENABLE = ""
-let sensorData: SensorMsg[] = []
-let payload: string = null
-let BEGIN_SENSOR_NAME = ""
-let PAYLOAD_SIZE = 0
-let successEvent: Evt_t = null
-let failureEvent: Evt_t = null
 let uartResponse: string = null
+let failureEvent: Evt_t = null
+let successEvent: Evt_t = null
+let PAYLOAD_SIZE = 0
+let BEGIN_SENSOR_NAME = ""
+let payload: string = null
+let sensorData: SensorMsg[] = []
+let CMD_EMULATOR_ENABLE = ""
+let CMD_EMULATOR_DISABLE = ""
+let CMD_GET_PAC = ""
+let CMD_GET_ID = ""
+let CMD_SEND_MESSAGE_RESPONSE = ""
+let CMD_SEND_MESSAGE = ""
+let CMD_RESET_CHANNEL = ""
+let CMD_GET_CHANNEL = ""
+let CMD_OUTPUT_POWER_MAX = ""
+let CMD_NONE = ""
+let DOWNLINK_TIMEOUT = 0
+let UPLINK_TIMEOUT = 0
+let COMMAND_TIMEOUT = 0
+let MAX_NETWORK_CMD_LIST_SIZE = 0
+let SEND_INTERVAL = 0
+let MAX_UART_SEND_MSG_SIZE = 0
+let uartMsg: UARTMsg = null
+let responseMsg: SensorMsg = null
+let msg: SensorMsg = null
+let cmdList: NetworkCmd[] = []
+let MAX_SENSOR_COUNT = 0
+let ENABLE_DOWNLINK = false
+let MAX_TIMEOUT = 0
+let RESPONSE_SENSOR_NAME = ""
 serial.redirect(
-    SerialPin.P0,
-    SerialPin.P1,
-    BaudRate.BaudRate9600
+SerialPin.P0,
+SerialPin.P1,
+BaudRate.BaudRate9600
 )
 // /////////////////////////////////////////////////////////////////////////
 // From platform.h
@@ -779,13 +779,17 @@ function getCmdIndex(list: Array<NetworkCmd>, listSize: number): number {
     }
     return n;
 }
-function createSensorMsg(name: string): SensorMsg {
+function createSensorMsg(name: string, value?: number): SensorMsg {
     //  Populate the msg fields as an empty message.
     let msg2: SensorMsg = {
         name: name,
         count: 0,  //  No data.
         data: [],
     };
+    if (value !== null) {
+        msg2.count = 1;
+        msg2.data = [value];
+    }
     return msg2;
 }
 // Buffer for constructing the message payload to be
@@ -1010,16 +1014,14 @@ function millis(): int32 {
 function F(s: string): string { return s; }
 serial.writeLine("line1")
 serial.writeLine("line2")
-//  Erase the aggregated sensor data.
-setup_aggregate();    //  We will aggregate the sensor data in Network Task before transmitting to network.
+// Erase the aggregated sensor data.
+setup_aggregate()
 network_setup()
 const beginMsg = createSensorMsg(BEGIN_SENSOR_NAME)
 network_task(beginMsg)
 basic.pause(2000)
-const sensorMsg = createSensorMsg("tmp")
-sensorMsg.count = 1
-sensorMsg.data = [12.3]
+let sensorMsg = createSensorMsg("tmp", 12.3)
 network_task(sensorMsg)
 basic.forever(function () {
-
+	
 })
