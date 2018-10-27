@@ -1,21 +1,21 @@
-let PAYLOAD_SIZE = 0
 let SEND_DELAY = 0
 let MAX_MESSAGE_SIZE = 0
 let MAX_DEVICE_CODE_SIZE = 0
 let MAX_DEVICE_ID_SIZE = 0
 let SENSOR_NOT_READY = 0
 let RESPONSE_SENSOR_NAME = ""
-let BEGIN_SENSOR_NAME = ""
 let MAX_SENSOR_NAME_SIZE = 0
 let MAX_SENSOR_DATA_SIZE = 0
 let MAX_UART_RESPONSE_MSG_SIZE = 0
 let MAX_PORT_COUNT = 0
-function setup_aggregate()  {
+function setup_aggregate() {
     // Clear the aggregated sensor data.
     for (let i = 0; i < MAX_SENSOR_COUNT; i++) {
-        let sensor: SensorMsg;
-sensor.name = "";
-sensor.count = 0;
+        let sensor: SensorMsg = {
+            name: "",
+            count: 0,
+            data: null,
+        };
 sensorData.push(sensor)
     }
 }
@@ -26,31 +26,33 @@ function led_toggle()  {
 function debug_flush()  {
 	
 }
-let payload: string = null
-let sensorData: SensorMsg[] = []
-let CMD_EMULATOR_ENABLE = ""
-let CMD_EMULATOR_DISABLE = ""
-let CMD_GET_PAC = ""
-let CMD_GET_ID = ""
-let CMD_SEND_MESSAGE_RESPONSE = ""
-let CMD_SEND_MESSAGE = ""
-let CMD_RESET_CHANNEL = ""
-let CMD_GET_CHANNEL = ""
-let CMD_OUTPUT_POWER_MAX = ""
-let CMD_NONE = ""
-let DOWNLINK_TIMEOUT = 0
-let UPLINK_TIMEOUT = 0
-let COMMAND_TIMEOUT = 0
-let MAX_NETWORK_CMD_LIST_SIZE = 0
-let SEND_INTERVAL = 0
-let MAX_UART_SEND_MSG_SIZE = 0
-let uartMsg: UARTMsg = null
-let responseMsg: SensorMsg = null
-let msg: SensorMsg = null
-let cmdList: NetworkCmd[] = []
-let MAX_SENSOR_COUNT = 0
-let ENABLE_DOWNLINK = false
 let MAX_TIMEOUT = 0
+let ENABLE_DOWNLINK = false
+let MAX_SENSOR_COUNT = 0
+let cmdList: NetworkCmd[] = []
+let msg: SensorMsg = null
+let responseMsg: SensorMsg = null
+let uartMsg: UARTMsg = null
+let MAX_UART_SEND_MSG_SIZE = 0
+let SEND_INTERVAL = 0
+let MAX_NETWORK_CMD_LIST_SIZE = 0
+let COMMAND_TIMEOUT = 0
+let UPLINK_TIMEOUT = 0
+let DOWNLINK_TIMEOUT = 0
+let CMD_NONE = ""
+let CMD_OUTPUT_POWER_MAX = ""
+let CMD_GET_CHANNEL = ""
+let CMD_RESET_CHANNEL = ""
+let CMD_SEND_MESSAGE = ""
+let CMD_SEND_MESSAGE_RESPONSE = ""
+let CMD_GET_ID = ""
+let CMD_GET_PAC = ""
+let CMD_EMULATOR_DISABLE = ""
+let CMD_EMULATOR_ENABLE = ""
+let sensorData: SensorMsg[] = []
+let payload: string = null
+let BEGIN_SENSOR_NAME = ""
+let PAYLOAD_SIZE = 0
 serial.redirect(
 SerialPin.P0,
 SerialPin.P1,
@@ -459,9 +461,9 @@ function getDownlink(context: NetworkContext, response0: string): boolean {
     const downlinkPrefix = "OK\nRX=";
     let foundIndex = -1;
     //  Implements: const foundIndex = response.indexOf(downlinkPrefix);
-    for (let i = 0; i + downlinkPrefix.length <= response.length; i++) {
-        if (response.substr(i, downlinkPrefix.length) === downlinkPrefix) {
-            foundIndex = i;
+    for (let j = 0; j + downlinkPrefix.length <= response.length; j++) {
+        if (response.substr(j, downlinkPrefix.length) === downlinkPrefix) {
+            foundIndex = j;
             break;
         }
     }
@@ -573,26 +575,26 @@ function setup_wisol(
 function addCmd(list: Array<NetworkCmd>, listSize: number, cmd: NetworkCmd): void {
     //  Append the UART message to the command list.
     //  Stop if we have overflowed the list.
-    let j = getCmdIndex(list, listSize);
-    list[j++] = cmd;
-    list[j++] = endOfList;
+    let k = getCmdIndex(list, listSize);
+    list[k++] = cmd;
+    list[k++] = endOfList;
 }
 function getCmdIndex(list: Array<NetworkCmd>, listSize: number): number {
     //  Given a list of commands, return the index of the next empty element.
     //  Check index against cmd size.  It must fit 2 more elements:
     //  The new cmd and the endOfList cmd.
-    let k = 0;
-    for (k = 0;  //  Search all elements in list.
-        list[k].sendData &&   //  Skip no-empty elements.
-        k < listSize - 1;  //  Don't exceed the list size.
-        k++) { }
-    if (k >= listSize - 1) {
+    let l = 0;
+    for (l = 0;  //  Search all elements in list.
+        list[l].sendData &&   //  Skip no-empty elements.
+        l < listSize - 1;  //  Don't exceed the list size.
+        l++) { }
+    if (l >= listSize - 1) {
         //  List is full.
-        debug_print(F("***** Error: Cmd list overflow - ")); debug_println(k); debug_flush();
-        k = listSize - 2;
-        if (k < 0) k = 0;
+        debug_print(F("***** Error: Cmd list overflow - ")); debug_println(l + ""); debug_flush();
+        l = listSize - 2;
+        if (l < 0) l = 0;
     }
-    return k;
+    return l;
 }
 function createSensorMsg(msg: SensorMsg, name: string): void {
     //  Populate the msg fields as an empty message.
@@ -688,10 +690,10 @@ function addPayloadInt(
     }
     if (data < 0 || data >= Math.pow(10, numDigits)) {  //  Show a warning if out of range.
         debug_print(F("***** Warning: Only last ")); debug_print(numDigits + "");
-        debug_print(F(" digits of ")); debug_print(name); debug_print(F(" value ")); debug_print(data);
+        debug_print(F(" digits of ")); debug_print(name); debug_print(F(" value ")); debug_print(data + "");
         debug_println(" will be sent"); // debug_flush();
     }
-    for (let l = numDigits - 1; l >= 0; l--) {  //  Add the digits in reverse order (right to left).
+    for (let m = numDigits - 1; m >= 0; m--) {  //  Add the digits in reverse order (right to left).
         const d = data % 10;  //  Take the last digit.
         data = data / 10;  //  Shift to the next digit.
         //  payloadBuffer[length + i] = '0' + d;  //  Write the digit to payload: 1 becomes '1'.
@@ -702,8 +704,8 @@ function addPayloadInt(
 }
 function copySensorData(dest: SensorMsg, src: SensorMsg): void {
     //  Copy sensor data from src to dest.
-    for (let m = 0; m < src.count; m++) {
-        dest.data[m] = src.data[m];
+    for (let n = 0; n < src.count; n++) {
+        dest.data[n] = src.data[n];
     }
     dest.count = src.count;
 }
@@ -711,14 +713,14 @@ function recallSensor(name: string): SensorMsg {
     //  Return the sensor data for the sensor name.  If not found, allocate
     //  a new SensorMsg and return it.  If no more space, return NULL.
     let emptyIndex = -1;
-    for (let n = 0; n < MAX_SENSOR_COUNT; n++) {
+    for (let o = 0; o < MAX_SENSOR_COUNT; o++) {
         //  Search for the sensor name in our data.
-        if (name === sensorData[n].name) {
-            return sensorData[n];  //  Found it.
+        if (name === sensorData[o].name) {
+            return sensorData[o];  //  Found it.
         }
         //  Find the first empty element.
-        if (emptyIndex == -1 && sensorData[n].name === "") {
-            emptyIndex = n;
+        if (emptyIndex == -1 && sensorData[o].name === "") {
+            emptyIndex = o;
         }
     }
     //  Allocate a new element.
@@ -745,6 +747,6 @@ function millis(): int32 {
     return input.runningTime();
 }
 function F(s: string): string { return s; }
-basic.forever(() => {
+basic.forever(function () {
 	
 })
