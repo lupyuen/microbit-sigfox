@@ -3,17 +3,42 @@ serial.redirect(
     SerialPin.P1,
     BaudRate.BaudRate9600
 )
+
 // /////////////////////////////////////////////////////////////////////////
-// From sensor.h Messages sent by Sensor Task
+// From platform.h 
+
+const MAX_SENSOR_COUNT = 3             //  Max number of sensors supported.
+const MAX_PORT_COUNT = 4               //  Max number of I/O ports that will be used, e.g. SPI1, I2C1.
+const MAX_UART_SEND_MSG_SIZE = 35      //  Max message length, e.g. 33 chars for AT$SF=0102030405060708090a0b0c,1\r
+const MAX_UART_RESPONSE_MSG_SIZE = 36  //  Max response length, e.g. 36 chars for ERR_SFX_ERR_SEND_FRAME_WAIT_TIMEOUT\r
+
+// /////////////////////////////////////////////////////////////////////////
+// From aggregate.h 
+
+// const ENABLE_DOWNLINK = false  //  Uplink data only
+const ENABLE_DOWNLINK = true  //  Uplink data and request for downlink
+
+//  Send a message to network every 20,000 milliseconds = 20 seconds.
+const SEND_INTERVAL = (20 * 1000)
+
+// /////////////////////////////////////////////////////////////////////////
+// From sensor.h 
+
+// Messages sent by Sensor Task
 // containing sensor data will be in this format.
 interface SensorMsg {
     // Msg_t super; //  Required for all cocoOS messages.
     name: string;   //  3-character name of sensor e.g. tmp, hmd. Includes terminating null.
-    data: Array<number>; //  Array of float sensor data values returned by the sensor.
+    data: number[]; //  Array of float sensor data values returned by the sensor.
     count: uint8;        //  Number of float sensor data values returned by the sensor.
 }
+
 // /////////////////////////////////////////////////////////////////////////
-// From wisol.h Defines a Wisol AT command string, to
+// From wisol.h 
+
+const MAX_NETWORK_CMD_LIST_SIZE = 5  //  Allow up to 4 UART commands to be sent in a single Network Step.
+
+// Defines a Wisol AT command string, to
 // be sent via UART Task. Sequence is sendData +
 // payload + sendData2
 interface NetworkCmd {
@@ -33,11 +58,11 @@ interface NetworkContext {
     useEmulator: boolean;  //  Set to true if using SNEK Emulator.
     stepBeginFunc: (  //  Begin Step: Return the Wisol AT Commands to be executed at startup.
         context: NetworkContext,
-        list: Array<NetworkCmd>,
+        list: NetworkCmd[],
         listSize: number) => void;
     stepSendFunc: (  //  Send Step: Return the Wisol AT Commands to be executed when sending a payload.
         context: NetworkContext,
-        list: Array<NetworkCmd>,
+        list: NetworkCmd[],
         listSize: number,
         payload: string,
         enableDownlink: boolean) => void;
@@ -51,13 +76,16 @@ interface NetworkContext {
     msg: SensorMsg;  //  Sensor data being sent. Set by network_task() upon receiving a message.
     downlinkData: string;  //  If downlink was requested, set the downlink hex string e.g. 0102030405060708.
 
-    cmdList: Array<NetworkCmd>;  //  List of Wisol AT commands being sent.
+    cmdList: NetworkCmd[];  //  List of Wisol AT commands being sent.
     cmdIndex: number;  //  Index of cmdList being sent.
 }
 // /////////////////////////////////////////////////////////////////////////
-// From uart.h TODO
+// From uart.h 
+
+// TODO
 interface Evt_t {
 }
+
 // UART Task accepts messages of this format for
 // sending data.
 interface UARTMsg {
@@ -82,7 +110,22 @@ interface UARTContext {
     msg: UARTMsg;  //  Message being sent. Set by uart_task() upon receiving a message.
 }
 // /////////////////////////////////////////////////////////////////////////
-// From sigfox.h Define the countries (ISO ALPHA-2
+// From sigfox.h 
+
+const MAX_DEVICE_ID_SIZE = 8     //  Max number of chars in Sigfox device ID.
+const MAX_DEVICE_CODE_SIZE = 16  //  Max number of chars in Sigfox PAC code.
+const MAX_MESSAGE_SIZE = 12      //  Sigfox supports up to 12 bytes per message.
+const SEND_DELAY = (10 * 60 * 1000)  //  According to regulation, messages should be sent only every 10 minutes.
+
+//  Define multiple timeouts for better multitasking.  Uplink to network is slower than normal
+//  commands.  Downlink is slowest, up to 1 minute.
+//  COMMAND_TIMEOUT < UPLINK_TIMEOUT < DOWNLINK_TIMEOUT
+const COMMAND_TIMEOUT = (10 * 1000)  //  Wait up to 10 seconds for simple command response from Sigfox module.
+const UPLINK_TIMEOUT = (20 * 1000)  //  Wait up to 20 seconds for uplink command response from Sigfox module.
+const DOWNLINK_TIMEOUT = (60 * 1000)  //  Wait up to 60 seconds for downlink command response from Sigfox module.
+const MAX_TIMEOUT = DOWNLINK_TIMEOUT  //  Maximum possible timeout.
+
+// Define the countries (ISO ALPHA-2
 // country code) and frequencies that are supported.
 // Based on https://www.sigfox.com/en/coverage,
 // https://www.st.com/content/ccc/resource/technical/document/user_manual/group0/8d/9a/ea/d7/62/06/43/ce/DM00361540/files/DM00361540.pdf/jcr:content/translations/en.DM00361540.pdf
@@ -143,15 +186,27 @@ enum Country {  //  Bits 0-6: First letter. Bits 7-13: Second letter.
     COUNTRY_AE = RCZ1 + 'A'.charCodeAt(0) + ('E'.charCodeAt(0) << 7),  //  United Arab Emirates: RCZ1
     COUNTRY_US = RCZ2 + 'U'.charCodeAt(0) + ('S'.charCodeAt(0) << 7),  //  United States of America: RCZ2
 }
-basic.forever(() => {
-
-})
-
-function F(s: string) { return s; }
-
 
 // /////////////////////////////////////////////////////////////////////////
 // From wisol.cpp
+
+const END_OF_RESPONSE = '\r'.charCodeAt(0)  //  Character '\r' marks the end of response.
+const CMD_END = "\r"
+
+const endOfList: NetworkCmd = {
+    sendData: null,
+    expectedMarkerCount: 0,
+    processFunc: null,
+    payload: null,
+    sendData2: null
+};  //  Command to indicate end of command list.
+
+let successEvent: Evt_t = {};
+let failureEvent: Evt_t = {};
+let cmdList: NetworkCmd[] = [];  //  Buffer for storing command list. Includes terminating msg.
+let msg: SensorMsg = null;  //  Incoming sensor data message.
+let responseMsg: SensorMsg = null;  //  Pending response message from UART to Wisol.
+let uartMsg: UARTMsg = null;  //  Outgoing UART message containing Wisol command.
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Define the Wisol AT Commands based on WISOLUserManual_EVBSFM10RxAT_Rev.9_180115.pdf
@@ -180,7 +235,7 @@ const CMD_EMULATOR_ENABLE = "ATS410=1"    //  Device will only talk to SNEK emul
 
 function getStepBegin(
     context: NetworkContext,
-    list: Array<NetworkCmd>,
+    list: NetworkCmd[],
     listSize: number): void {
     //  Return the list of Wisol AT commands for the Begin Step, to start up the Wisol module.  //  debug(F(" - wisol.getStepBegin"));
     addCmd(list, listSize, {
@@ -209,7 +264,7 @@ function getStepBegin(
 
 function getStepSend(
     context: NetworkContext,
-    list: Array<NetworkCmd>,
+    list: NetworkCmd[],
     listSize: number,
     payload: string,
     enableDownlink: boolean): void {
@@ -368,7 +423,14 @@ function getDownlink(context: NetworkContext, response0: string): boolean {
     //  Remove the prefix and spaces:
     //    replace "OK\nRX=" by "", replace " " by ""
     const downlinkPrefix = "OK\nRX=";
-    const foundIndex = response.indexOf(downlinkPrefix);
+    let foundIndex = -1;
+    //  Implements: const foundIndex = response.indexOf(downlinkPrefix);
+    for (let i = 0; i + downlinkPrefix.length <= response.length; i++) {
+        if (response.substr(i, downlinkPrefix.length) === downlinkPrefix) {
+            foundIndex = i;
+            break;
+        }
+    }
     if (foundIndex >= 0) {
         //  Found the delimiter. Transform <<BEFORE>>OK\nRX=<<AFTER>>
         //  To <<BEFORE>><<AFTER>>
@@ -524,3 +586,13 @@ function debug_flush(): void {
 
 function debug(p1: any, p2?: any): void {
 }
+
+function F(s: string) { return s; }
+
+function millis(): int32 {
+    return 0;  ////  runningTime();   
+}
+
+basic.forever(() => {
+
+})
