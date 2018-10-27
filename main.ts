@@ -574,6 +574,7 @@ function createSensorMsg(msg: SensorMsg, name: string): void {
     msg.count = 0;  //  No data.
     msg.name = name;
 }
+
 // /////////////////////////////////////// TODO
 function debug_print(p1: string, p2?: string): void {
     debug(p1, p2);
@@ -592,3 +593,138 @@ function millis(): int32 {
 basic.forever(() => {
 	
 })
+
+// /////////////////////////////////////////////////////////////////////////
+// From aggregate.cpp
+
+//  Remember the last sensor value of each sensor.
+let sensorData: SensorMsg[] = [];
+
+//  Buffer for constructing the message payload to be sent, in hex digits, plus terminating null.
+const PAYLOAD_SIZE = (1 + MAX_MESSAGE_SIZE * 2)  //  Each byte takes 2 hex digits. Add 1 for terminating null.
+let payload: string = null;  //  e.g. "0102030405060708090a0b0c"
+//  const testPayload = "0102030405060708090a0b0c";  //  For testing
+
+function aggregate_sensor_data(
+    context: NetworkContext,  //  Context storage for the Network Task.
+    msg: SensorMsg,           //  Sensor Data Message just received. Contains sensor name and sensor values.
+    cmdList: NetworkCmd[],    //  Upon return, will be populated by the list of AT Commands to be executed.
+    cmdListSize: number): boolean {        //  How many commands may be stored in cmdList.
+    //  Aggregate the received sensor data.  Check whether we should send the data, based on 
+    //  the throttle settings.  Return true if we should send the message.  The message commands are
+    //  populated in cmdList, up to cmdListSize elements (including the terminating command).
+    led_toggle();  //  Blink the LED so we know we are aggregating continuously.
+    if (msg.name === BEGIN_SENSOR_NAME) {
+        //  If sensor name is "000", this is the Begin Step.
+        context.stepBeginFunc(context, cmdList, cmdListSize);  //  Fetch list of startup commands for the transceiver.
+        return true;  //  Send the startup commands.
+    }
+    debug_print(msg.name); debug_print(F(" << Recv data "));
+    if (msg.count > 0) { debug_println(msg.data[0]); }
+    else { debug_println("(empty)"); }
+    //  debug_flush();
+
+    //  Aggregate the sensor data.  Here we just save the last value for each sensor.
+    let savedSensor: SensorMsg = recallSensor(msg.name);
+    if (!savedSensor) return false;  //  Return error.
+    copySensorData(savedSensor, msg);  //  Copy the data from the received message into the saved data.
+
+    //  Throttle the sending.  TODO: Show warning if messages are sent faster than SEND_DELAY.
+    let now = millis();
+    if ((context.lastSend + SEND_INTERVAL) > now) { return false; }  //  Not ready to send.
+    context.lastSend = now + MAX_TIMEOUT;  //  Prevent other requests from trying to send.
+
+    //  Create a new Sigfox message. Add a running sequence number to the message.
+    payload = "";  //  Empty the message payload.
+    let sequenceNumber = 0;
+    addPayloadInt(payload, PAYLOAD_SIZE, "seq", sequenceNumber++, 4);
+
+    //  Encode the sensor data into a Sigfox message, 4 digits each.
+    const sendSensors = ["tmp", "hmd", "alt"];  //  Sensors to be sent.
+    sendSensors.forEach((val: string, i: number) => {
+        //  Get each sensor data and add to the message payload.
+        let data = 0.0;
+        const sensorName = sendSensors[i];
+        savedSensor = recallSensor(sensorName);  //  Find the sensor.
+        if (savedSensor) { data = savedSensor.data[0]; }  //  Fetch the sensor data (first float only).
+        const scaledData = data * 10.0;  //  Scale up by 10 to send 1 decimal place. So 27.1 becomes 271
+        addPayloadInt(payload, PAYLOAD_SIZE, sensorName, scaledData, 4);  //  Add to payload.        
+    })
+
+    //  If the payload has odd number of digits, pad with '0'.
+    const length = payload.length;
+    if (length % 2 != 0 && length < PAYLOAD_SIZE - 1) {
+        payload = payload + '0';
+    }
+    debug_print(F("agg >> Send ")); debug_println(payload);
+
+    //  Compose the list of Wisol AT Commands for sending the message payload.
+    context.stepSendFunc(context, cmdList, cmdListSize, payload, ENABLE_DOWNLINK);
+    return true;  //  Will be sent by the caller.
+}
+
+function addPayloadInt(
+    payloadBuffer: string,
+    payloadSize: number, 
+    name: string,
+    data: number,
+    numDigits: number): void {
+        //  Add the integer data to the message payload as numDigits digits in hexadecimal.
+        //  So data=1234 and numDigits=4, it will be added as "1234".  Not efficient, but easy to read.
+        const length = payloadBuffer.length;
+    if (length + numDigits >= payloadSize) {  //  No space for numDigits hex digits.
+        debug(F("***** Error: No payload space for "), name);
+        return;
+    }
+    if (data < 0 || data >= Math.pow(10, numDigits)) {  //  Show a warning if out of range.
+        debug_print(F("***** Warning: Only last ")); debug_print(numDigits + "");
+        debug_print(F(" digits of ")); debug_print(name); debug_print(F(" value ")); debug_print(data);
+        debug_println(" will be sent"); // debug_flush();
+    }
+    for (let i = numDigits - 1; i >= 0; i--) {  //  Add the digits in reverse order (right to left).
+        const d = data % 10;  //  Take the last digit.
+        data = data / 10;  //  Shift to the next digit.
+        payloadBuffer[length + i] = '0' + d;  //  Write the digit to payload: 1 becomes '1'.
+    }
+}
+
+function copySensorData(dest: SensorMsg, src: SensorMsg): void {
+    //  Copy sensor data from src to dest.
+    for (let i = 0; i < src.count; i++) {
+        dest.data[i] = src.data[i];
+    }
+    dest.count = src.count;
+}
+
+function recallSensor(name: string): SensorMsg {
+    //  Return the sensor data for the sensor name.  If not found, allocate
+    //  a new SensorMsg and return it.  If no more space, return NULL.
+    let emptyIndex = -1;
+    for (let i = 0; i < MAX_SENSOR_COUNT; i++) {
+        //  Search for the sensor name in our data.
+        if (name === sensorData[i].name) {
+            return sensorData[i];  //  Found it.
+        }
+        //  Find the first empty element.
+        if (emptyIndex == -1 && sensorData[i].name === "") {
+            emptyIndex = i;
+        }
+    }
+    //  Allocate a new element.
+    if (emptyIndex == -1) {  //  No more space.
+        debug(F("***** Error: No aggregate space for "), name);
+        return null;
+    }
+    sensorData[emptyIndex].name = name;
+    sensorData[emptyIndex].count = 0;  //  Clear the values.
+    sensorData[emptyIndex].data[0] = 0;  //  Reset to 0 in case we need to send.
+    return sensorData[emptyIndex];
+}
+
+function setup_aggregate(): void {
+    //  Clear the aggregated sensor data.
+    for (let i = 0; i < MAX_SENSOR_COUNT; i++) {
+        sensorData[i].name = "";  //  Clear the name.
+        sensorData[i].count = 0;  //  Clear the values.
+    }
+}
