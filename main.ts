@@ -3,11 +3,36 @@ let MAX_MESSAGE_SIZE = 0
 let MAX_DEVICE_CODE_SIZE = 0
 let MAX_DEVICE_ID_SIZE = 0
 let SENSOR_NOT_READY = 0
-let RESPONSE_SENSOR_NAME = ""
 let MAX_SENSOR_NAME_SIZE = 0
 let MAX_SENSOR_DATA_SIZE = 0
 let MAX_UART_RESPONSE_MSG_SIZE = 0
 let MAX_PORT_COUNT = 0
+function network_setup() {
+    // Start the Network Task to send and receive network
+    // messages. Also starts the UART Task called by the
+    // Network Task to send/receive data to the UART port.
+    // UART Task must have the highest task priority
+    // because it must respond to UART data immediately.
+    // Start the UART Task for transmitting UART data to
+    // the Wisol module.
+    setup_uart(
+        uartContext,  //  Init the context for UART Task.
+        uartResponse);
+    // Start the Network Task for receiving sensor data
+    // and transmitting to UART Task.
+    setup_wisol(
+        wisolContext,  //  Init the context for the Network Task.
+        uartContext,
+        0,
+        Country.COUNTRY_SG,  //  Change this to your country code. Affects the Sigfox frequency used.
+        false);
+}
+function task_open() {
+
+}
+function task_close() {
+
+}
 function setup_aggregate() {
     // Clear the aggregated sensor data.
     for (let i = 0; i < MAX_SENSOR_COUNT; i++) {
@@ -26,6 +51,7 @@ function led_toggle() {
 function debug_flush() {
 
 }
+let RESPONSE_SENSOR_NAME = ""
 let MAX_TIMEOUT = 0
 let ENABLE_DOWNLINK = false
 let MAX_SENSOR_COUNT = 0
@@ -53,6 +79,9 @@ let sensorData: SensorMsg[] = []
 let payload: string = null
 let BEGIN_SENSOR_NAME = ""
 let PAYLOAD_SIZE = 0
+let successEvent: Evt_t = null
+let failureEvent: Evt_t = null
+let uartResponse: string = null
 serial.redirect(
     SerialPin.P0,
     SerialPin.P1,
@@ -246,9 +275,6 @@ const endOfList: NetworkCmd = {
     sendData2: null
 };
 let sendSemaphore: Sem_t = {};
-let successEvent: Evt_t = null;
-let failureEvent: Evt_t = null;
-
 function network_task(msg: SensorMsg): void {
     //  Loop forever, receiving sensor data messages and sending to UART Task to transmit to the network.
     //  Note: Declare task variables here before task_open() but don't populate them here
@@ -260,10 +286,8 @@ function network_task(msg: SensorMsg): void {
     task_open();  //  Start of the task. Must be matched with task_close().  
     if (!successEvent) { successEvent = event_create(); }  //  Create event for UART Task to indicate success.
     if (!failureEvent) { failureEvent = event_create(); }  //  Another event to indicate failure.
-    //// createSensorMsg(msg, BEGIN_SENSOR_NAME);  //  We create a "begin" message and process only upon startup.
-    //// createSensorMsg(responseMsg, RESPONSE_SENSOR_NAME);  //  UART Task sends this message for a pending response received.
 
-    for (let i = 0; i < 1; i++) {  //  Run the sensor data receiving code once only.
+    for (let j = 0; j < 1; j++) {  //  Run the sensor data receiving code once only.
         //  If this is a UART response message, process the pending response.
         if (msg.name === RESPONSE_SENSOR_NAME) {
             processPendingResponse(ctx());
@@ -340,7 +364,6 @@ function network_task(msg: SensorMsg): void {
     }  //  Loop to next incoming sensor data message.
     task_close();  //  End of the task. Should not come here.
 }
-
 function processPendingResponse(context: NetworkContext): void {
     //  If there is a pending response, e.g. from send payload...
     debug(F("net >> Pending response"));
@@ -356,7 +379,6 @@ function processPendingResponse(context: NetworkContext): void {
         process_downlink_msg(context, context.status, context.downlinkData);
     }
 }
-
 function processResponse(context: NetworkContext): void {
     //  Process the response from the Wisol AT Command by calling the
     //  process response function.  Set the status to false if the processing failed.
@@ -383,7 +405,6 @@ function processResponse(context: NetworkContext): void {
         return;  //  Quit processing.
     }
 }
-
 // /////////////////////////////////////////////////////////////////////////////
 // Define the Wisol AT Commands based on
 // WISOLUserManual_EVBSFM10RxAT_Rev.9_180115.pdf
@@ -585,7 +606,7 @@ function getDownlink(context: NetworkContext, response0: string): boolean {
     //  or a timeout error after 1 min e.g. "ERR_SFX_ERR_SEND_FRAME_WAIT_TIMEOUT"
 
     //  Get a writeable response pointer in the uartContext.
-    let response = context.uartContext.response;  // debug(F(" - wisol.getDownlink: "), response);
+    let response2 = context.uartContext.response;  // debug(F(" - wisol.getDownlink: "), response);
 
     //  Check the original response.
     //  If Successful response: OK\nRX=01 23 45 67 89 AB CD EF
@@ -598,9 +619,9 @@ function getDownlink(context: NetworkContext, response0: string): boolean {
     const downlinkPrefix = "OK\nRX=";
     let foundIndex = -1;
     //  Implements: const foundIndex = response.indexOf(downlinkPrefix);
-    for (let j = 0; j + downlinkPrefix.length <= response.length; j++) {
-        if (response.substr(j, downlinkPrefix.length) === downlinkPrefix) {
-            foundIndex = j;
+    for (let k = 0; k + downlinkPrefix.length <= response2.length; k++) {
+        if (response2.substr(k, downlinkPrefix.length) === downlinkPrefix) {
+            foundIndex = k;
             break;
         }
     }
@@ -610,8 +631,8 @@ function getDownlink(context: NetworkContext, response0: string): boolean {
         //  foundIndex points to "OK\nRX=".
 
         //  Shift <<AFTER>> next to <<BEFORE>>.
-        const after = response.substr(foundIndex + downlinkPrefix.length);
-        response = response.substr(0, foundIndex - 1) + after;
+        const after = response2.substr(foundIndex + downlinkPrefix.length);
+        response2 = response2.substr(0, foundIndex - 1) + after;
     } else {
         //  Return error e.g. ERR_SFX_ERR_SEND_FRAME_WAIT_TIMEOUT
         context.status = false;
@@ -622,18 +643,18 @@ function getDownlink(context: NetworkContext, response0: string): boolean {
     for (; ;) {
         if (src >= MAX_UART_SEND_MSG_SIZE) break;
         //  Don't copy spaces and newlines in the source.
-        if (response[src] === ' ' || response[src] === '\n') {
+        if (response2[src] === ' ' || response2[src] === '\n') {
             src++;
             continue;
         }
         //  Copy the character.
-        newResponse = newResponse + response[src];
+        newResponse = newResponse + response2[src];
         //  If we have copied the terminating null, quit.
         ////if (dst >= response.length) { break; }
         dst++; src++;  //  Shift to next char.
     }
-    response = newResponse;
-    context.downlinkData = response;
+    response2 = newResponse;
+    context.downlinkData = response2;
     return true;
 }
 let uartData: string;
@@ -711,15 +732,15 @@ function setup_wisol(
 
     //  Populate the command list.
     cmdList = [];
-    for (let i = 0; i < MAX_NETWORK_CMD_LIST_SIZE; i++) {
-        let cmd: NetworkCmd = {
+    for (let l = 0; l < MAX_NETWORK_CMD_LIST_SIZE; l++) {
+        let cmd2: NetworkCmd = {
             sendData: null,
             expectedMarkerCount: 0,
             processFunc: null,
             payload: null,
             sendData2: null,
         };
-        cmdList.push(cmd);
+        cmdList.push(cmd2);
     }
 
     //  Init the UART message.
@@ -737,35 +758,35 @@ function setup_wisol(
 function addCmd(list: Array<NetworkCmd>, listSize: number, cmd: NetworkCmd): void {
     //  Append the UART message to the command list.
     //  Stop if we have overflowed the list.
-    let k = getCmdIndex(list, listSize);
-    list[k++] = cmd;
-    list[k++] = endOfList;
+    let m = getCmdIndex(list, listSize);
+    list[m++] = cmd;
+    list[m++] = endOfList;
 }
 function getCmdIndex(list: Array<NetworkCmd>, listSize: number): number {
     //  Given a list of commands, return the index of the next empty element.
     //  Check index against cmd size.  It must fit 2 more elements:
     //  The new cmd and the endOfList cmd.
-    let l = 0;
-    for (l = 0;  //  Search all elements in list.
-        list[l].sendData &&   //  Skip no-empty elements.
-        l < listSize - 1;  //  Don't exceed the list size.
-        l++) { }
-    if (l >= listSize - 1) {
+    let n = 0;
+    for (n = 0;  //  Search all elements in list.
+        list[n].sendData &&   //  Skip no-empty elements.
+        n < listSize - 1;  //  Don't exceed the list size.
+        n++) { }
+    if (n >= listSize - 1) {
         //  List is full.
-        debug_print(F("***** Error: Cmd list overflow - ")); debug_println(l + ""); debug_flush();
-        l = listSize - 2;
-        if (l < 0) l = 0;
+        debug_print(F("***** Error: Cmd list overflow - ")); debug_println(n + ""); debug_flush();
+        n = listSize - 2;
+        if (n < 0) n = 0;
     }
-    return l;
+    return n;
 }
 function createSensorMsg(name: string): SensorMsg {
     //  Populate the msg fields as an empty message.
-    let msg: SensorMsg = {
+    let msg2: SensorMsg = {
         name: name,
         count: 0,  //  No data.
         data: [],
     };
-    return msg;
+    return msg2;
 }
 // Buffer for constructing the message payload to be
 // sent, in hex digits, plus terminating null.
@@ -814,10 +835,9 @@ function aggregate_sensor_data(
 
     //  Encode the sensor data into a Sigfox message, 4 digits each.
     const sendSensors = ["tmp", "hmd", "alt"];  //  Sensors to be sent.
-    sendSensors.forEach((val: string, i: number) => {
+    sendSensors.forEach((sensorName: string) => {
         //  Get each sensor data and add to the message payload.
         let data = 0.0;
-        const sensorName = sendSensors[i];
         savedSensor = recallSensor(sensorName);  //  Find the sensor.
         if (savedSensor) { data = savedSensor.data[0]; }  //  Fetch the sensor data (first float only).
         const scaledData = data * 10.0;  //  Scale up by 10 to send 1 decimal place. So 27.1 becomes 271
@@ -859,7 +879,7 @@ function addPayloadInt(
         debug_print(F(" digits of ")); debug_print(name); debug_print(F(" value ")); debug_print(data + "");
         debug_println(" will be sent"); // debug_flush();
     }
-    for (let m = numDigits - 1; m >= 0; m--) {  //  Add the digits in reverse order (right to left).
+    for (let o = numDigits - 1; o >= 0; o--) {  //  Add the digits in reverse order (right to left).
         const d = data % 10;  //  Take the last digit.
         data = data / 10;  //  Shift to the next digit.
         //  payloadBuffer[length + i] = '0' + d;  //  Write the digit to payload: 1 becomes '1'.
@@ -870,8 +890,8 @@ function addPayloadInt(
 }
 function copySensorData(dest: SensorMsg, src: SensorMsg): void {
     //  Copy sensor data from src to dest.
-    for (let n = 0; n < src.count; n++) {
-        dest.data[n] = src.data[n];
+    for (let p = 0; p < src.count; p++) {
+        dest.data[p] = src.data[p];
     }
     dest.count = src.count;
 }
@@ -879,14 +899,14 @@ function recallSensor(name: string): SensorMsg {
     //  Return the sensor data for the sensor name.  If not found, allocate
     //  a new SensorMsg and return it.  If no more space, return NULL.
     let emptyIndex = -1;
-    for (let o = 0; o < MAX_SENSOR_COUNT; o++) {
+    for (let q = 0; q < MAX_SENSOR_COUNT; q++) {
         //  Search for the sensor name in our data.
-        if (name === sensorData[o].name) {
-            return sensorData[o];  //  Found it.
+        if (name === sensorData[q].name) {
+            return sensorData[q];  //  Found it.
         }
         //  Find the first empty element.
-        if (emptyIndex == -1 && sensorData[o].name === "") {
-            emptyIndex = o;
+        if (emptyIndex == -1 && sensorData[q].name === "") {
+            emptyIndex = q;
         }
     }
     //  Allocate a new element.
@@ -899,9 +919,7 @@ function recallSensor(name: string): SensorMsg {
     sensorData[emptyIndex].data[0] = 0;  //  Reset to 0 in case we need to send.
     return sensorData[emptyIndex];
 }
-
-//  From downlink.cpp
-
+// From downlink.cpp
 function process_downlink_msg(
     context: NetworkContext,  //  Task context.
     status: boolean,          //  True if downlink was received.
@@ -912,40 +930,14 @@ function process_downlink_msg(
     //  TODO: Add your code here to process the downlink message.
     return true;  //  Means no error.
 }
-
-//  From main.cpp
-let uartResponse: string = null;  //  Buffer for writing UART response.
-
-function network_setup(): void {
-    //  Start the Network Task to send and receive network messages.
-    //  Also starts the UART Task called by the Network Task to send/receive data to the UART port.
-    //  UART Task must have the highest task priority because it must respond to UART data immediately.
-
-    //  Start the UART Task for transmitting UART data to the Wisol module.
-    setup_uart(
-        uartContext,  //  Init the context for UART Task.
-        uartResponse); //  UART Task will save the response data here.
-
-    //  Start the Network Task for receiving sensor data and transmitting to UART Task.
-    setup_wisol(
-        wisolContext,  //  Init the context for the Network Task.
-        uartContext,
-        0,
-        Country.COUNTRY_SG,  //  Change this to your country code. Affects the Sigfox frequency used.
-        false);      //  Must be false because we are not using the Sigfox emulator.
-}
-
-//  From uart.cpp
-
+// From uart.cpp
 function setup_uart(
     context: UARTContext,  //  Will be used to store the context of the UART Task.
     response: string): void {      //  Buffer that will be used to store the UART response.
     //  Init the UART context with the response buffer.
     context.response = response;
 }
-
-//  TODO
-
+// TODO
 let uartContext: UARTContext = {
     status: false,
     sendIndex: 0,
@@ -977,12 +969,10 @@ let wisolContext: NetworkContext = {
     cmdIndex: 0,
 };
 function ctx(): NetworkContext { return wisolContext; }
-
-interface Sem_t { };
+interface Sem_t { }
+;
 function sem_wait(sem: Sem_t): void { }
 function sem_signal(sem: Sem_t): void { }
-function task_open(): void { }
-function task_close(): void { }
 function event_create(): Evt_t { return {}; }
 function event_wait_multiple(mode: number, event1: Evt_t, event2: Evt_t): void { }
 function os_get_running_tid(): number { return 2205; }
@@ -992,8 +982,9 @@ function msg_receive(task_id: number, msg: SensorMsg): void {
 function msg_post(task_id: number, msg: UARTMsg): void {
     //  TODO
     debug(">> msg_post ", msg.sendData)
+    uartContext.status = true;
+    uartContext.response = "OK";
 }
-
 function debug_print(p1: string, p2?: string): void {
     serial.writeString(p1)
     if (p2 !== null) { serial.writeString(p2) }
@@ -1010,13 +1001,16 @@ function millis(): int32 {
     return input.runningTime()
 }
 function F(s: string): string { return s; }
-
 serial.writeLine("line1")
 serial.writeLine("line2")
-network_setup();
-const beginMsg = createSensorMsg(BEGIN_SENSOR_NAME);  //  We create a "begin" message and process only upon startup.
-network_task(beginMsg);
-
-basic.forever(() => {
+network_setup()
+const beginMsg = createSensorMsg(BEGIN_SENSOR_NAME)
+network_task(beginMsg)
+basic.pause(2000)
+const sensorMsg = createSensorMsg("tmp")
+sensorMsg.count = 1
+sensorMsg.data = [12.3]
+network_task(sensorMsg)
+basic.forever(function () {
 
 })
