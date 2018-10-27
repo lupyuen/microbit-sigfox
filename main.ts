@@ -7,9 +7,6 @@ let ENABLE_DOWNLINK = false
 let MAX_UART_RESPONSE_MSG_SIZE = 0
 let MAX_PORT_COUNT = 0
 let MAX_SENSOR_COUNT = 0
-function debug_flush()  {
-	
-}
 let cmdList: NetworkCmd[] = []
 let msg: SensorMsg = null
 let responseMsg: SensorMsg = null
@@ -31,9 +28,9 @@ let CMD_GET_PAC = ""
 let CMD_EMULATOR_DISABLE = ""
 let CMD_EMULATOR_ENABLE = ""
 serial.redirect(
-SerialPin.P0,
-SerialPin.P1,
-BaudRate.BaudRate9600
+    SerialPin.P0,
+    SerialPin.P1,
+    BaudRate.BaudRate9600
 )
 // /////////////////////////////////////////////////////////////////////////
 // From platform.h
@@ -49,7 +46,15 @@ ENABLE_DOWNLINK = true
 // = 20 seconds.
 SEND_INTERVAL = 20 * 1000
 // /////////////////////////////////////////////////////////////////////////
-// From sensor.h Messages sent by Sensor Task
+// From sensor.h 
+
+const MAX_SENSOR_DATA_SIZE = 3  //  Max number of floats that can be returned as sensor data for a single sensor.
+const MAX_SENSOR_NAME_SIZE = 3  //  Max number of letters/digits in sensor name.
+const BEGIN_SENSOR_NAME = "000" //  If sensor name is this, then this is the Begin Step that runs at startup.
+const RESPONSE_SENSOR_NAME = "RES"  //  This is the response message sent by UART Task to Network Task.
+const SENSOR_NOT_READY = 0xff       //  poll_sensor and resume_sensor functions will return SENSOR_NOT_READY when sensor data is not ready.
+
+// Messages sent by Sensor Task
 // containing sensor data will be in this format.
 interface SensorMsg {
     // Msg_t super; //  Required for all cocoOS messages.
@@ -575,25 +580,6 @@ function createSensorMsg(msg: SensorMsg, name: string): void {
     msg.name = name;
 }
 
-// /////////////////////////////////////// TODO
-function debug_print(p1: string, p2?: string): void {
-    debug(p1, p2);
-}
-function debug_println(p1: string, p2?: string): void {
-    debug(p1, p2);
-}
-function debug(p1: string, p2?: string): void {
-    ////  TODO
-}
-function F(s: string) { return s; }
-function millis(): int32 {
-    //  Number of seconds elapsed since power on.
-    return input.runningTime();
-}
-basic.forever(() => {
-	
-})
-
 // /////////////////////////////////////////////////////////////////////////
 // From aggregate.cpp
 
@@ -620,7 +606,7 @@ function aggregate_sensor_data(
         return true;  //  Send the startup commands.
     }
     debug_print(msg.name); debug_print(F(" << Recv data "));
-    if (msg.count > 0) { debug_println(msg.data[0]); }
+    if (msg.count > 0) { debug_println(msg.data[0] + ""); }
     else { debug_println("(empty)"); }
     //  debug_flush();
 
@@ -637,7 +623,7 @@ function aggregate_sensor_data(
     //  Create a new Sigfox message. Add a running sequence number to the message.
     payload = "";  //  Empty the message payload.
     let sequenceNumber = 0;
-    addPayloadInt(payload, PAYLOAD_SIZE, "seq", sequenceNumber++, 4);
+    payload = addPayloadInt(payload, PAYLOAD_SIZE, "seq", sequenceNumber++, 4);
 
     //  Encode the sensor data into a Sigfox message, 4 digits each.
     const sendSensors = ["tmp", "hmd", "alt"];  //  Sensors to be sent.
@@ -648,7 +634,7 @@ function aggregate_sensor_data(
         savedSensor = recallSensor(sensorName);  //  Find the sensor.
         if (savedSensor) { data = savedSensor.data[0]; }  //  Fetch the sensor data (first float only).
         const scaledData = data * 10.0;  //  Scale up by 10 to send 1 decimal place. So 27.1 becomes 271
-        addPayloadInt(payload, PAYLOAD_SIZE, sensorName, scaledData, 4);  //  Add to payload.        
+        payload = addPayloadInt(payload, PAYLOAD_SIZE, sensorName, scaledData, 4);  //  Add to payload.        
     })
 
     //  If the payload has odd number of digits, pad with '0'.
@@ -665,16 +651,16 @@ function aggregate_sensor_data(
 
 function addPayloadInt(
     payloadBuffer: string,
-    payloadSize: number, 
+    payloadSize: number,
     name: string,
     data: number,
-    numDigits: number): void {
-        //  Add the integer data to the message payload as numDigits digits in hexadecimal.
-        //  So data=1234 and numDigits=4, it will be added as "1234".  Not efficient, but easy to read.
-        const length = payloadBuffer.length;
+    numDigits: number): string {
+    //  Add the integer data to the message payload as numDigits digits in hexadecimal.
+    //  So data=1234 and numDigits=4, it will be added as "1234".  Not efficient, but easy to read.
+    const length = payloadBuffer.length;
     if (length + numDigits >= payloadSize) {  //  No space for numDigits hex digits.
         debug(F("***** Error: No payload space for "), name);
-        return;
+        return payloadBuffer;
     }
     if (data < 0 || data >= Math.pow(10, numDigits)) {  //  Show a warning if out of range.
         debug_print(F("***** Warning: Only last ")); debug_print(numDigits + "");
@@ -684,8 +670,11 @@ function addPayloadInt(
     for (let i = numDigits - 1; i >= 0; i--) {  //  Add the digits in reverse order (right to left).
         const d = data % 10;  //  Take the last digit.
         data = data / 10;  //  Shift to the next digit.
-        payloadBuffer[length + i] = '0' + d;  //  Write the digit to payload: 1 becomes '1'.
+        //  payloadBuffer[length + i] = '0' + d;  //  Write the digit to payload: 1 becomes '1'.
+        payloadBuffer = payloadBuffer + String.fromCharCode(
+            '0'.charCodeAt(0) + d);  //  Write the digit to payload: 1 becomes '1'.
     }
+    return payloadBuffer;
 }
 
 function copySensorData(dest: SensorMsg, src: SensorMsg): void {
@@ -724,7 +713,34 @@ function recallSensor(name: string): SensorMsg {
 function setup_aggregate(): void {
     //  Clear the aggregated sensor data.
     for (let i = 0; i < MAX_SENSOR_COUNT; i++) {
-        sensorData[i].name = "";  //  Clear the name.
-        sensorData[i].count = 0;  //  Clear the values.
+        let sensor: SensorMsg;
+        sensor.name = "";  //  Clear the name.
+        sensor.count = 0;  //  Clear the values.
+        sensorData.push(sensor);  //  Add to the list of sensors.
     }
 }
+
+// /////////////////////////////////////// TODO
+function led_toggle(): void {
+    ////  TODO    
+}
+function debug_print(p1: string, p2?: string): void {
+    debug(p1, p2);
+}
+function debug_println(p1: string, p2?: string): void {
+    debug(p1, p2);
+}
+function debug(p1: string, p2?: string): void {
+    ////  TODO
+}
+function debug_flush(): void {
+    ////  TODO
+}
+function millis(): int32 {
+    //  Number of seconds elapsed since power on.
+    return input.runningTime();
+}
+function F(s: string): string { return s; }
+basic.forever(() => {
+
+})
