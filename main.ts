@@ -820,18 +820,23 @@ function aggregate_sensor_data(
 
     //  Aggregate the sensor data.  Here we just save the last value for each sensor.
     let savedSensor: SensorMsg = recallSensor(msg.name);
+    debug_print(msg.name, "1a"); ////
     if (!savedSensor) return false;  //  Return error.
+    debug_print(msg.name, "1b"); ////
     copySensorData(savedSensor, msg);  //  Copy the data from the received message into the saved data.
+    debug_print(msg.name, "1c"); ////
 
     //  Throttle the sending.  TODO: Show warning if messages are sent faster than SEND_DELAY.
     let now = millis();
     if ((context.lastSend + SEND_INTERVAL) > now) { return false; }  //  Not ready to send.
     context.lastSend = now + MAX_TIMEOUT;  //  Prevent other requests from trying to send.
+    debug_print(msg.name, "2"); ////
 
     //  Create a new Sigfox message. Add a running sequence number to the message.
     payload = "";  //  Empty the message payload.
     let sequenceNumber = 0;
     payload = addPayloadInt(payload, PAYLOAD_SIZE, "seq", sequenceNumber++, 4);
+    debug_print(msg.name, "3"); ////
 
     //  Encode the sensor data into a Sigfox message, 4 digits each.
     const sendSensors = ["tmp", "hmd", "alt"];  //  Sensors to be sent.
@@ -839,10 +844,11 @@ function aggregate_sensor_data(
         //  Get each sensor data and add to the message payload.
         let data = 0.0;
         savedSensor = recallSensor(sensorName);  //  Find the sensor.
-        if (savedSensor) { data = savedSensor.data[0]; }  //  Fetch the sensor data (first float only).
+        if (savedSensor && savedSensor.count > 0) { data = savedSensor.data[0]; }  //  Fetch the sensor data (first float only).
         const scaledData = data * 10.0;  //  Scale up by 10 to send 1 decimal place. So 27.1 becomes 271
         payload = addPayloadInt(payload, PAYLOAD_SIZE, sensorName, scaledData, 4);  //  Add to payload.        
     })
+    debug_print(msg.name, "4"); ////
 
     //  If the payload has odd number of digits, pad with '0'.
     const length = payload.length;
@@ -890,8 +896,9 @@ function addPayloadInt(
 }
 function copySensorData(dest: SensorMsg, src: SensorMsg): void {
     //  Copy sensor data from src to dest.
+    dest.data = [];
     for (let p = 0; p < src.count; p++) {
-        dest.data[p] = src.data[p];
+        dest.data.push(src.data[p]);
     }
     dest.count = src.count;
 }
@@ -916,7 +923,7 @@ function recallSensor(name: string): SensorMsg {
     }
     sensorData[emptyIndex].name = name;
     sensorData[emptyIndex].count = 0;  //  Clear the values.
-    sensorData[emptyIndex].data[0] = 0;  //  Reset to 0 in case we need to send.
+    sensorData[emptyIndex].data = [];  //  Reset to empty in case we need to send.
     return sensorData[emptyIndex];
 }
 // From downlink.cpp
@@ -1003,6 +1010,8 @@ function millis(): int32 {
 function F(s: string): string { return s; }
 serial.writeLine("line1")
 serial.writeLine("line2")
+//  Erase the aggregated sensor data.
+setup_aggregate();    //  We will aggregate the sensor data in Network Task before transmitting to network.
 network_setup()
 const beginMsg = createSensorMsg(BEGIN_SENSOR_NAME)
 network_task(beginMsg)
