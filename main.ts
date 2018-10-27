@@ -1,36 +1,60 @@
-let MAX_TIMEOUT = 0
+let PAYLOAD_SIZE = 0
 let SEND_DELAY = 0
 let MAX_MESSAGE_SIZE = 0
 let MAX_DEVICE_CODE_SIZE = 0
 let MAX_DEVICE_ID_SIZE = 0
-let ENABLE_DOWNLINK = false
+let SENSOR_NOT_READY = 0
+let RESPONSE_SENSOR_NAME = ""
+let BEGIN_SENSOR_NAME = ""
+let MAX_SENSOR_NAME_SIZE = 0
+let MAX_SENSOR_DATA_SIZE = 0
 let MAX_UART_RESPONSE_MSG_SIZE = 0
 let MAX_PORT_COUNT = 0
-let MAX_SENSOR_COUNT = 0
-let cmdList: NetworkCmd[] = []
-let msg: SensorMsg = null
-let responseMsg: SensorMsg = null
-let uartMsg: UARTMsg = null
-let MAX_UART_SEND_MSG_SIZE = 0
-let SEND_INTERVAL = 0
-let MAX_NETWORK_CMD_LIST_SIZE = 0
-let COMMAND_TIMEOUT = 0
-let UPLINK_TIMEOUT = 0
-let DOWNLINK_TIMEOUT = 0
-let CMD_NONE = ""
-let CMD_OUTPUT_POWER_MAX = ""
-let CMD_GET_CHANNEL = ""
-let CMD_RESET_CHANNEL = ""
-let CMD_SEND_MESSAGE = ""
-let CMD_SEND_MESSAGE_RESPONSE = ""
-let CMD_GET_ID = ""
-let CMD_GET_PAC = ""
-let CMD_EMULATOR_DISABLE = ""
+function setup_aggregate()  {
+    // Clear the aggregated sensor data.
+    for (let i = 0; i < MAX_SENSOR_COUNT; i++) {
+        let sensor: SensorMsg;
+sensor.name = "";
+sensor.count = 0;
+sensorData.push(sensor)
+    }
+}
+// /////////////////////////////////////// TODO
+function led_toggle()  {
+	
+}
+function debug_flush()  {
+	
+}
+let payload: string = null
+let sensorData: SensorMsg[] = []
 let CMD_EMULATOR_ENABLE = ""
+let CMD_EMULATOR_DISABLE = ""
+let CMD_GET_PAC = ""
+let CMD_GET_ID = ""
+let CMD_SEND_MESSAGE_RESPONSE = ""
+let CMD_SEND_MESSAGE = ""
+let CMD_RESET_CHANNEL = ""
+let CMD_GET_CHANNEL = ""
+let CMD_OUTPUT_POWER_MAX = ""
+let CMD_NONE = ""
+let DOWNLINK_TIMEOUT = 0
+let UPLINK_TIMEOUT = 0
+let COMMAND_TIMEOUT = 0
+let MAX_NETWORK_CMD_LIST_SIZE = 0
+let SEND_INTERVAL = 0
+let MAX_UART_SEND_MSG_SIZE = 0
+let uartMsg: UARTMsg = null
+let responseMsg: SensorMsg = null
+let msg: SensorMsg = null
+let cmdList: NetworkCmd[] = []
+let MAX_SENSOR_COUNT = 0
+let ENABLE_DOWNLINK = false
+let MAX_TIMEOUT = 0
 serial.redirect(
-    SerialPin.P0,
-    SerialPin.P1,
-    BaudRate.BaudRate9600
+SerialPin.P0,
+SerialPin.P1,
+BaudRate.BaudRate9600
 )
 // /////////////////////////////////////////////////////////////////////////
 // From platform.h
@@ -46,16 +70,14 @@ ENABLE_DOWNLINK = true
 // = 20 seconds.
 SEND_INTERVAL = 20 * 1000
 // /////////////////////////////////////////////////////////////////////////
-// From sensor.h 
-
-const MAX_SENSOR_DATA_SIZE = 3  //  Max number of floats that can be returned as sensor data for a single sensor.
-const MAX_SENSOR_NAME_SIZE = 3  //  Max number of letters/digits in sensor name.
-const BEGIN_SENSOR_NAME = "000" //  If sensor name is this, then this is the Begin Step that runs at startup.
-const RESPONSE_SENSOR_NAME = "RES"  //  This is the response message sent by UART Task to Network Task.
-const SENSOR_NOT_READY = 0xff       //  poll_sensor and resume_sensor functions will return SENSOR_NOT_READY when sensor data is not ready.
-
-// Messages sent by Sensor Task
-// containing sensor data will be in this format.
+// From sensor.h
+MAX_SENSOR_DATA_SIZE = 3
+MAX_SENSOR_NAME_SIZE = 3
+BEGIN_SENSOR_NAME = "000"
+RESPONSE_SENSOR_NAME = "RES"
+SENSOR_NOT_READY = 255
+// Messages sent by Sensor Task containing sensor data
+// will be in this format.
 interface SensorMsg {
     // Msg_t super; //  Required for all cocoOS messages.
     name: string;   //  3-character name of sensor e.g. tmp, hmd. Includes terminating null.
@@ -85,14 +107,10 @@ interface NetworkContext {
     useEmulator: boolean;  //  Set to true if using SNEK Emulator.
     stepBeginFunc: (  //  Begin Step: Return the Wisol AT Commands to be executed at startup.
         context: NetworkContext,
-        list: NetworkCmd[],
-        listSize: number) => void;
+        args: StepArgs) => void;
     stepSendFunc: (  //  Send Step: Return the Wisol AT Commands to be executed when sending a payload.
         context: NetworkContext,
-        list: NetworkCmd[],
-        listSize: number,
-        payload: string,
-        enableDownlink: boolean) => void;
+        args: StepArgs) => void;
 
     device: string;  //  Sigfox device ID read from device e.g. 002C2EA1
     pac: string;  //  Sigfox PAC code read from device e.g. 5BEB8CF64E869BD1
@@ -105,6 +123,12 @@ interface NetworkContext {
 
     cmdList: NetworkCmd[];  //  List of Wisol AT commands being sent.
     cmdIndex: number;  //  Index of cmdList being sent.
+}
+interface StepArgs {
+    list: NetworkCmd[];
+    listSize: number;
+    payload: string;
+    enableDownlink: boolean;
 }
 // /////////////////////////////////////////////////////////////////////////
 // From uart.h TODO
@@ -249,10 +273,9 @@ CMD_EMULATOR_ENABLE = "ATS410=1"
 // Command.
 function getStepBegin(
     context: NetworkContext,
-    list: NetworkCmd[],
-    listSize: number): void {
+    args: StepArgs): void {
     //  Return the list of Wisol AT commands for the Begin Step, to start up the Wisol module.  //  debug(F(" - wisol.getStepBegin"));
-    addCmd(list, listSize, {
+    addCmd(args.list, args.listSize, {
         //  Set emulation mode.
         sendData: context.useEmulator  //  If emulator mode,
             ? F(CMD_EMULATOR_ENABLE)   //  Device will only talk to SNEK emulator.
@@ -262,13 +285,13 @@ function getStepBegin(
         payload: null, sendData2: null
     });
     //  Get Sigfox device ID and PAC.
-    addCmd(list, listSize, {
+    addCmd(args.list, args.listSize, {
         sendData: F(CMD_GET_ID),
         expectedMarkerCount: 1,
         processFunc: getID,
         payload: null, sendData2: null
     });
-    addCmd(list, listSize, {
+    addCmd(args.list, args.listSize, {
         sendData: F(CMD_GET_PAC),
         expectedMarkerCount: 1,
         processFunc: getPAC,
@@ -277,10 +300,7 @@ function getStepBegin(
 }
 function getStepSend(
     context: NetworkContext,
-    list: NetworkCmd[],
-    listSize: number,
-    payload: string,
-    enableDownlink: boolean): void {
+    args: StepArgs): void {
     //  Return the list of Wisol AT commands for the Send Step, to send the payload.
     //  Payload contains a string of hex digits, up to 24 digits / 12 bytes.
     //  We prefix with AT$SF= and send to the transceiver.  If enableDownlink is true, we append the
@@ -288,7 +308,7 @@ function getStepSend(
     //  The downlink response message from Sigfox will be returned in the response parameter.
     //  Warning: This may take up to 1 min to run.  //  debug(F(" - wisol.getStepSend"));
     //  Set the output power for the zone.
-    getStepPowerChannel(context, list, listSize);
+    getStepPowerChannel(context, args.list, args.listSize);
 
     //  Compose the payload sending command.
     let markers = 1;  //  Wait for 1 line of response.
@@ -296,17 +316,17 @@ function getStepSend(
     let sendData2: string = null;  //  Text to be appended to payload.
 
     // If no downlink: Send CMD_SEND_MESSAGE + payload
-    if (enableDownlink) {
+    if (args.enableDownlink) {
         //  For downlink mode: send CMD_SEND_MESSAGE + payload + CMD_SEND_MESSAGE_RESPONSE
         markers++;  //  Wait for one more response line.   
         processFunc = getDownlink;  //  Process the downlink message.
         sendData2 = F(CMD_SEND_MESSAGE_RESPONSE);  //  Append suffix to payload.
     }
-    addCmd(list, listSize, {
+    addCmd(args.list, args.listSize, {
         sendData: F(CMD_SEND_MESSAGE),
         expectedMarkerCount: markers,
         processFunc: processFunc,
-        payload: payload,
+        payload: args.payload,
         sendData2: sendData2
     });
 }
@@ -579,18 +599,11 @@ function createSensorMsg(msg: SensorMsg, name: string): void {
     msg.count = 0;  //  No data.
     msg.name = name;
 }
-
-// /////////////////////////////////////////////////////////////////////////
-// From aggregate.cpp
-
-//  Remember the last sensor value of each sensor.
-let sensorData: SensorMsg[] = [];
-
-//  Buffer for constructing the message payload to be sent, in hex digits, plus terminating null.
-const PAYLOAD_SIZE = (1 + MAX_MESSAGE_SIZE * 2)  //  Each byte takes 2 hex digits. Add 1 for terminating null.
-let payload: string = null;  //  e.g. "0102030405060708090a0b0c"
-//  const testPayload = "0102030405060708090a0b0c";  //  For testing
-
+// Buffer for constructing the message payload to be
+// sent, in hex digits, plus terminating null.
+PAYLOAD_SIZE = 1 + MAX_MESSAGE_SIZE * 2
+// const testPayload = "0102030405060708090a0b0c";  //
+// For testing
 function aggregate_sensor_data(
     context: NetworkContext,  //  Context storage for the Network Task.
     msg: SensorMsg,           //  Sensor Data Message just received. Contains sensor name and sensor values.
@@ -602,7 +615,13 @@ function aggregate_sensor_data(
     led_toggle();  //  Blink the LED so we know we are aggregating continuously.
     if (msg.name === BEGIN_SENSOR_NAME) {
         //  If sensor name is "000", this is the Begin Step.
-        context.stepBeginFunc(context, cmdList, cmdListSize);  //  Fetch list of startup commands for the transceiver.
+        const beginArgs: StepArgs = {
+            list: cmdList,
+            listSize: cmdListSize,
+            payload: "",
+            enableDownlink: ENABLE_DOWNLINK,
+        };
+        context.stepBeginFunc(context, beginArgs);  //  Fetch list of startup commands for the transceiver.
         return true;  //  Send the startup commands.
     }
     debug_print(msg.name); debug_print(F(" << Recv data "));
@@ -645,10 +664,15 @@ function aggregate_sensor_data(
     debug_print(F("agg >> Send ")); debug_println(payload);
 
     //  Compose the list of Wisol AT Commands for sending the message payload.
-    context.stepSendFunc(context, cmdList, cmdListSize, payload, ENABLE_DOWNLINK);
+    const sendArgs: StepArgs = {
+        list: cmdList,
+        listSize: cmdListSize,
+        payload: payload,
+        enableDownlink: ENABLE_DOWNLINK,
+    };
+    context.stepSendFunc(context, sendArgs);
     return true;  //  Will be sent by the caller.
 }
-
 function addPayloadInt(
     payloadBuffer: string,
     payloadSize: number,
@@ -657,8 +681,8 @@ function addPayloadInt(
     numDigits: number): string {
     //  Add the integer data to the message payload as numDigits digits in hexadecimal.
     //  So data=1234 and numDigits=4, it will be added as "1234".  Not efficient, but easy to read.
-    const length = payloadBuffer.length;
-    if (length + numDigits >= payloadSize) {  //  No space for numDigits hex digits.
+    const length2 = payloadBuffer.length;
+    if (length2 + numDigits >= payloadSize) {  //  No space for numDigits hex digits.
         debug(F("***** Error: No payload space for "), name);
         return payloadBuffer;
     }
@@ -667,7 +691,7 @@ function addPayloadInt(
         debug_print(F(" digits of ")); debug_print(name); debug_print(F(" value ")); debug_print(data);
         debug_println(" will be sent"); // debug_flush();
     }
-    for (let i = numDigits - 1; i >= 0; i--) {  //  Add the digits in reverse order (right to left).
+    for (let l = numDigits - 1; l >= 0; l--) {  //  Add the digits in reverse order (right to left).
         const d = data % 10;  //  Take the last digit.
         data = data / 10;  //  Shift to the next digit.
         //  payloadBuffer[length + i] = '0' + d;  //  Write the digit to payload: 1 becomes '1'.
@@ -676,27 +700,25 @@ function addPayloadInt(
     }
     return payloadBuffer;
 }
-
 function copySensorData(dest: SensorMsg, src: SensorMsg): void {
     //  Copy sensor data from src to dest.
-    for (let i = 0; i < src.count; i++) {
-        dest.data[i] = src.data[i];
+    for (let m = 0; m < src.count; m++) {
+        dest.data[m] = src.data[m];
     }
     dest.count = src.count;
 }
-
 function recallSensor(name: string): SensorMsg {
     //  Return the sensor data for the sensor name.  If not found, allocate
     //  a new SensorMsg and return it.  If no more space, return NULL.
     let emptyIndex = -1;
-    for (let i = 0; i < MAX_SENSOR_COUNT; i++) {
+    for (let n = 0; n < MAX_SENSOR_COUNT; n++) {
         //  Search for the sensor name in our data.
-        if (name === sensorData[i].name) {
-            return sensorData[i];  //  Found it.
+        if (name === sensorData[n].name) {
+            return sensorData[n];  //  Found it.
         }
         //  Find the first empty element.
-        if (emptyIndex == -1 && sensorData[i].name === "") {
-            emptyIndex = i;
+        if (emptyIndex == -1 && sensorData[n].name === "") {
+            emptyIndex = n;
         }
     }
     //  Allocate a new element.
@@ -709,21 +731,6 @@ function recallSensor(name: string): SensorMsg {
     sensorData[emptyIndex].data[0] = 0;  //  Reset to 0 in case we need to send.
     return sensorData[emptyIndex];
 }
-
-function setup_aggregate(): void {
-    //  Clear the aggregated sensor data.
-    for (let i = 0; i < MAX_SENSOR_COUNT; i++) {
-        let sensor: SensorMsg;
-        sensor.name = "";  //  Clear the name.
-        sensor.count = 0;  //  Clear the values.
-        sensorData.push(sensor);  //  Add to the list of sensors.
-    }
-}
-
-// /////////////////////////////////////// TODO
-function led_toggle(): void {
-    ////  TODO    
-}
 function debug_print(p1: string, p2?: string): void {
     debug(p1, p2);
 }
@@ -733,14 +740,11 @@ function debug_println(p1: string, p2?: string): void {
 function debug(p1: string, p2?: string): void {
     ////  TODO
 }
-function debug_flush(): void {
-    ////  TODO
-}
 function millis(): int32 {
     //  Number of seconds elapsed since power on.
     return input.runningTime();
 }
 function F(s: string): string { return s; }
 basic.forever(() => {
-
+	
 })
