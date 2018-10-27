@@ -8,7 +8,7 @@ let MAX_SENSOR_NAME_SIZE = 0
 let MAX_SENSOR_DATA_SIZE = 0
 let MAX_UART_RESPONSE_MSG_SIZE = 0
 let MAX_PORT_COUNT = 0
-function setup_aggregate()  {
+function setup_aggregate() {
     // Clear the aggregated sensor data.
     for (let i = 0; i < MAX_SENSOR_COUNT; i++) {
         let sensor: SensorMsg = {
@@ -16,43 +16,48 @@ function setup_aggregate()  {
             count: 0,
             data: null,
         };
-sensorData.push(sensor)
+        sensorData.push(sensor)
     }
 }
 // /////////////////////////////////////// TODO
-function led_toggle()  {
-	
+function led_toggle() {
+
 }
-function debug_flush()  {
-	
+function debug_flush() {
+
 }
-let PAYLOAD_SIZE = 0
-let BEGIN_SENSOR_NAME = ""
-let payload: string = null
-let sensorData: SensorMsg[] = []
-let CMD_EMULATOR_ENABLE = ""
-let CMD_EMULATOR_DISABLE = ""
-let CMD_GET_PAC = ""
-let CMD_GET_ID = ""
-let CMD_SEND_MESSAGE_RESPONSE = ""
-let CMD_SEND_MESSAGE = ""
-let CMD_RESET_CHANNEL = ""
-let CMD_GET_CHANNEL = ""
-let CMD_OUTPUT_POWER_MAX = ""
-let CMD_NONE = ""
-let DOWNLINK_TIMEOUT = 0
-let UPLINK_TIMEOUT = 0
-let COMMAND_TIMEOUT = 0
-let MAX_NETWORK_CMD_LIST_SIZE = 0
-let SEND_INTERVAL = 0
-let MAX_UART_SEND_MSG_SIZE = 0
-let uartMsg: UARTMsg = null
-let responseMsg: SensorMsg = null
-let msg: SensorMsg = null
-let cmdList: NetworkCmd[] = []
-let MAX_SENSOR_COUNT = 0
-let ENABLE_DOWNLINK = false
 let MAX_TIMEOUT = 0
+let ENABLE_DOWNLINK = false
+let MAX_SENSOR_COUNT = 0
+let cmdList: NetworkCmd[] = []
+let msg: SensorMsg = null
+let responseMsg: SensorMsg = null
+let uartMsg: UARTMsg = null
+let MAX_UART_SEND_MSG_SIZE = 0
+let SEND_INTERVAL = 0
+let MAX_NETWORK_CMD_LIST_SIZE = 0
+let COMMAND_TIMEOUT = 0
+let UPLINK_TIMEOUT = 0
+let DOWNLINK_TIMEOUT = 0
+let CMD_NONE = ""
+let CMD_OUTPUT_POWER_MAX = ""
+let CMD_GET_CHANNEL = ""
+let CMD_RESET_CHANNEL = ""
+let CMD_SEND_MESSAGE = ""
+let CMD_SEND_MESSAGE_RESPONSE = ""
+let CMD_GET_ID = ""
+let CMD_GET_PAC = ""
+let CMD_EMULATOR_DISABLE = ""
+let CMD_EMULATOR_ENABLE = ""
+let sensorData: SensorMsg[] = []
+let payload: string = null
+let BEGIN_SENSOR_NAME = ""
+let PAYLOAD_SIZE = 0
+serial.redirect(
+    SerialPin.P0,
+    SerialPin.P1,
+    BaudRate.BaudRate9600
+)
 // /////////////////////////////////////////////////////////////////////////
 // From platform.h
 MAX_SENSOR_COUNT = 3
@@ -240,8 +245,143 @@ const endOfList: NetworkCmd = {
     payload: null,
     sendData2: null
 };
+let sendSemaphore: Sem_t = {};
 let successEvent: Evt_t = {};
 let failureEvent: Evt_t = {};
+
+function network_task(): void {
+    //  Loop forever, receiving sensor data messages and sending to UART Task to transmit to the network.
+    //  Note: Declare task variables here before task_open() but don't populate them here
+    //  unless they are not supposed to change. Because the coroutine will execute this code 
+    //  repeatedly and repopulate the values.
+    let cmd: NetworkCmd;
+    let shouldSend: boolean;
+
+    task_open();  //  Start of the task. Must be matched with task_close().  
+    successEvent = event_create();  //  Create event for UART Task to indicate success.
+    failureEvent = event_create();  //  Another event to indicate failure.
+    createSensorMsg(msg, BEGIN_SENSOR_NAME);  //  We create a "begin" message and process only upon startup.
+    createSensorMsg(responseMsg, RESPONSE_SENSOR_NAME);  //  UART Task sends this message for a pending response received.
+
+    for (; ;) {  //  Run the sensor data receiving code forever. So the task never ends.
+        //  If not the first iteration, wait for an incoming message containing sensor data.
+        if (msg.name === BEGIN_SENSOR_NAME) {
+            msg_receive(os_get_running_tid(), msg);
+        }
+        //  If this is a UART response message, process the pending response.
+        if (msg.name === RESPONSE_SENSOR_NAME) {
+            processPendingResponse(ctx());
+            continue;
+        }
+        //  Aggregate the sensor data.  Determine whether we should send to network now.
+        cmdList[0] = endOfList;  //  Empty the command list.
+        shouldSend = aggregate_sensor_data(ctx(), msg, cmdList, MAX_NETWORK_CMD_LIST_SIZE);  //  Fetch the command list into cmdList.
+        if (!shouldSend) { continue; }  //  If we should not send now: Loop and wait for next message.
+
+        //  Use a semaphore to limit sending to only 1 message at a time, because our buffers are shared.
+        debug(F("net >> Wait for net"));
+        sem_wait(sendSemaphore);  //  Wait until no other message is being sent. Then lock the semaphore.
+        debug(F("net >> Got net"));
+
+        //  Init the context.
+        ctx().status = true;            //  Assume no error.
+        ctx().pendingResponse = false;  //  Assume no need to wait for response.
+        ctx().msg = msg;               //  Remember the message until it's sent via UART.  
+        ctx().downlinkData = null;      //  No downlink received yet.  
+        ctx().cmdList = cmdList;        //  Run the command list.
+        ctx().cmdIndex = 0;             //  Start at first command in command list.
+        ctx().lastSend = millis() + MAX_TIMEOUT;  //  Set to a high timeout to prevent other requests from attempting to send.
+
+        ///////////////////////////////////////////////////////////////////////////
+        //  Wisol AT Command List Processing Loop
+        for (; ;) {  //  Send each Wisol AT command in the list.
+            ctx().lastSend = millis();  //  Update the last send time.
+
+            if (ctx().cmdIndex >= MAX_NETWORK_CMD_LIST_SIZE) { break; }  //  Check that we don't exceed the array bounds.
+            cmd = ctx().cmdList[ctx().cmdIndex];  //  Fetch the current command.        
+            if (!cmd.sendData) { break; }     //  If no more commands to send, stop.
+
+            //  Convert Wisol command to UART command.
+            convertCmdToUART(cmd, ctx(), uartMsg, successEvent, failureEvent, responseMsg, os_get_running_tid());
+            ctx().lastSend = millis() + uartMsg.timeout;  //  Estimate last send time for the next command.
+            ctx().pendingProcessFunc = cmd.processFunc;   //  Call this function to process response later.
+
+            //  Transmit the UART command to the UART port by sending to the UART Task.
+            //  msg_post() is a synchronised send - it waits for the queue to be available before sending.
+            msg_post(ctx().uartTaskID, uartMsg);  //  Send the message to the UART task for transmission.
+
+            //  When sending the last step of Sigfox message payload: Break out of the loop and release the semaphore lock. 
+            if (uartMsg.responseMsg) { //  This is the last command in the list and it will take some time.  Instead of waiting for
+                ctx().pendingResponse = true;   //  UART Task to signal us via an Event, we let UART Task signal us via a Message instead.
+                break;                          //  By releasing the semaphore we allow other tasks to run and improve the multitasking.
+            }
+            //  Wait for success or failure event then process the response.
+            event_wait_multiple(0, successEvent, failureEvent);  //  0 means wait for any event.
+            processResponse(ctx());  //  Process the response by calling the response function.
+            if (!ctx().status) { break; }  //  Quit if the processing failed.
+
+            //  Command was transmitted successfully. Move to next command.
+            ctx().cmdIndex++;  //  Next Wisol command.
+        }  //  Loop to next Wisol command.
+        //  All Wisol AT commands sent for the step.
+
+        ///////////////////////////////////////////////////////////////////////////
+        //  Wisol AT Command List Completed Processing
+        //  Clean up the context and release the semaphore.
+        msg.name = null;       //  Erase the "begin" sensor name.
+        ctx().msg = null;      //  Erase the message.
+        ctx().cmdList = null;  //  Erase the command list.
+
+        //  Release the semaphore and allow another payload to be sent after SEND_INTERVAL.
+        debug(F("net >> Release net"));
+        sem_signal(sendSemaphore);
+    }  //  Loop to next incoming sensor data message.
+    task_close();  //  End of the task. Should not come here.
+}
+
+function processPendingResponse(context: NetworkContext): void {
+    //  If there is a pending response, e.g. from send payload...
+    debug(F("net >> Pending response"));
+    if (!context.pendingResponse) {
+        debug(F("***** Error: No pending response"));
+        return;
+    }
+    context.pendingResponse = false;
+    processResponse(context);     //  Process the response by calling the response function.
+    context.lastSend = millis();  //  Update the last send time.
+    //  Process the downlink message, if any. This is located outside the semaphore lock for performance.
+    if (context.downlinkData) {
+        process_downlink_msg(context, context.status, context.downlinkData);
+    }
+}
+
+function processResponse(context: NetworkContext): void {
+    //  Process the response from the Wisol AT Command by calling the
+    //  process response function.  Set the status to false if the processing failed.
+
+    //  Get the response text.
+    const response: string = (context && context.uartContext)
+        ? context.uartContext.response
+        : "";
+    //  Process the response text, regardless of success/failure.
+    //  Call the process response function if has been set.
+    if (context.pendingProcessFunc) {
+        const processStatus = (context.pendingProcessFunc)(context, response);
+        //  If response processing failed, stop.
+        if (!processStatus) {
+            context.status = false;  //  Propagate status to Wisol context.
+            debug(F("***** Error: network_task Result processing failed, response: "), response);
+            return;  //  Quit processing.
+        }
+    }
+    //  In case of failure, stop.
+    if (!context.uartContext.status) {
+        context.status = false;  //  Propagate status to Wisol context.
+        debug(F("***** Error: network_task Failed, response: "), response);
+        return;  //  Quit processing.
+    }
+}
+
 // /////////////////////////////////////////////////////////////////////////////
 // Define the Wisol AT Commands based on
 // WISOLUserManual_EVBSFM10RxAT_Rev.9_180115.pdf
@@ -728,14 +868,108 @@ function recallSensor(name: string): SensorMsg {
     sensorData[emptyIndex].data[0] = 0;  //  Reset to 0 in case we need to send.
     return sensorData[emptyIndex];
 }
+
+//  From downlink.cpp
+
+function process_downlink_msg(
+    context: NetworkContext,  //  Task context.
+    status: boolean,          //  True if downlink was received.
+    data: string): boolean {  //  Downlink data (up to 8 bytes in hex e.g. "0102030405060708") or error name.
+    if (status) { debug(F(" - process_downlink_msg: "), data); }
+    else { debug(F(" - process_downlink_msg (Failed): "), data); }
+
+    //  TODO: Add your code here to process the downlink message.
+    return true;  //  Means no error.
+}
+
+//  From main.cpp
+let uartResponse: string = null;  //  Buffer for writing UART response.
+
+function network_setup(): void {
+    //  Start the Network Task to send and receive network messages.
+    //  Also starts the UART Task called by the Network Task to send/receive data to the UART port.
+    //  UART Task must have the highest task priority because it must respond to UART data immediately.
+
+    //  Start the UART Task for transmitting UART data to the Wisol module.
+    setup_uart(
+        uartContext,  //  Init the context for UART Task.
+        uartResponse); //  UART Task will save the response data here.
+
+    //  Start the Network Task for receiving sensor data and transmitting to UART Task.
+    setup_wisol(
+        wisolContext,  //  Init the context for the Network Task.
+        uartContext,
+        0,
+        Country.COUNTRY_SG,  //  Change this to your country code. Affects the Sigfox frequency used.
+        false);      //  Must be false because we are not using the Sigfox emulator.
+}
+
+//  From uart.cpp
+
+function setup_uart(
+    context: UARTContext,  //  Will be used to store the context of the UART Task.
+    response: string): void {      //  Buffer that will be used to store the UART response.
+    //  Init the UART context with the response buffer.
+    context.response = response;
+}
+
+//  TODO
+
+let uartContext: UARTContext = {
+    status: false,
+    sendIndex: 0,
+    sentTime: 0,
+    response: null,
+    actualMarkerCount: 0,
+    testTimer: 0,
+    msg: null,
+}
+let wisolContext: NetworkContext = {
+    uartContext: null,
+    uartTaskID: 0,
+    zone: 0,
+    country: Country.COUNTRY_SG,
+    useEmulator: false,
+    stepBeginFunc: null,
+    stepSendFunc: null,
+
+    device: null,
+    pac: null,
+    status: false,
+    pendingResponse: false,
+    pendingProcessFunc: null,
+    lastSend: 0,
+    msg: null,
+    downlinkData: null,
+
+    cmdList: null,
+    cmdIndex: 0,
+};
+function ctx(): NetworkContext { return wisolContext; }
+
+interface Sem_t { };
+function sem_wait(sem: Sem_t): void { }
+function sem_signal(sem: Sem_t): void { }
+function task_open(): void { }
+function task_close(): void { }
+function event_create(): Evt_t { return {}; }
+function event_wait_multiple(mode: number, event1: Evt_t, event2: Evt_t): void { }
+function msg_post(task_id: number, msg: UARTMsg): void { }
+function os_get_running_tid(): number { return 2205; }
+function msg_receive(task_id: number, msg: SensorMsg): void {
+    //  TODO
+}
+
 function debug_print(p1: string, p2?: string): void {
-    debug(p1, p2)
+    serial.writeString(p1)
+    if (p2 !== null) { serial.writeString(p2) }
 }
 function debug_println(p1: string, p2?: string): void {
-    debug(p1, p2)
+    debug_print(p1, p2);
+    serial.writeLine("");
 }
 function debug(p1: string, p2?: string): void {
-    ////  TODO
+    debug_println(p1, p2);
 }
 function millis(): int32 {
     //  Number of seconds elapsed since power on.
@@ -745,5 +979,5 @@ function F(s: string): string { return s; }
 serial.writeLine("line1")
 serial.writeLine("line2")
 basic.forever(() => {
-	
+
 })
