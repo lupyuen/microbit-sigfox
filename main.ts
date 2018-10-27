@@ -885,13 +885,25 @@ function process_downlink_msg(
 //  TODO
 
 let networkContext: NetworkContext = {
+    uartContext: null,
+    uartTaskID: 0,
+    zone: 0,
+    country: COUNTRY_SG,
+    useEmulator: false,
+    stepBeginFunc: null,
+    stepSendFunc: null,
+
+    device: null,
+    pac: null,
     status: false,
-    sendIndex: 0,
-    sentTime: 0,
-    response: null,
-    actualMarkerCount: 0,
-    testTimer: 0,
+    pendingResponse: false,
+    pendingProcessFunc: null,
+    lastSend: 0,
     msg: null,
+    downlinkData: null,
+
+    cmdList: null,
+    cmdIndex: 0,
 };
 function ctx(): NetworkContext { return networkContext; }
 
