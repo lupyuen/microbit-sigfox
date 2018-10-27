@@ -246,10 +246,10 @@ const endOfList: NetworkCmd = {
     sendData2: null
 };
 let sendSemaphore: Sem_t = {};
-let successEvent: Evt_t = {};
-let failureEvent: Evt_t = {};
+let successEvent: Evt_t = null;
+let failureEvent: Evt_t = null;
 
-function network_task(): void {
+function network_task(msg: SensorMsg): void {
     //  Loop forever, receiving sensor data messages and sending to UART Task to transmit to the network.
     //  Note: Declare task variables here before task_open() but don't populate them here
     //  unless they are not supposed to change. Because the coroutine will execute this code 
@@ -258,16 +258,12 @@ function network_task(): void {
     let shouldSend: boolean;
 
     task_open();  //  Start of the task. Must be matched with task_close().  
-    successEvent = event_create();  //  Create event for UART Task to indicate success.
-    failureEvent = event_create();  //  Another event to indicate failure.
-    createSensorMsg(msg, BEGIN_SENSOR_NAME);  //  We create a "begin" message and process only upon startup.
-    createSensorMsg(responseMsg, RESPONSE_SENSOR_NAME);  //  UART Task sends this message for a pending response received.
+    if (!successEvent) { successEvent = event_create(); }  //  Create event for UART Task to indicate success.
+    if (!failureEvent) { failureEvent = event_create(); }  //  Another event to indicate failure.
+    //// createSensorMsg(msg, BEGIN_SENSOR_NAME);  //  We create a "begin" message and process only upon startup.
+    //// createSensorMsg(responseMsg, RESPONSE_SENSOR_NAME);  //  UART Task sends this message for a pending response received.
 
-    for (; ;) {  //  Run the sensor data receiving code forever. So the task never ends.
-        //  If not the first iteration, wait for an incoming message containing sensor data.
-        if (msg.name === BEGIN_SENSOR_NAME) {
-            msg_receive(os_get_running_tid(), msg);
-        }
+    for (let i = 0; i < 1; i++) {  //  Run the sensor data receiving code once only.
         //  If this is a UART response message, process the pending response.
         if (msg.name === RESPONSE_SENSOR_NAME) {
             processPendingResponse(ctx());
@@ -731,10 +727,14 @@ function getCmdIndex(list: Array<NetworkCmd>, listSize: number): number {
     }
     return l;
 }
-function createSensorMsg(msg: SensorMsg, name: string): void {
+function createSensorMsg(name: string): SensorMsg {
     //  Populate the msg fields as an empty message.
-    msg.count = 0;  //  No data.
-    msg.name = name;
+    let msg: SensorMsg = {
+        name: name,
+        count: 0,  //  No data.
+        data: [],
+    };
+    return msg;
 }
 // Buffer for constructing the message payload to be
 // sent, in hex digits, plus terminating null.
@@ -976,8 +976,13 @@ function millis(): int32 {
     return input.runningTime()
 }
 function F(s: string): string { return s; }
+
 serial.writeLine("line1")
 serial.writeLine("line2")
+network_setup();
+const beginMsg = createSensorMsg(BEGIN_SENSOR_NAME);  //  We create a "begin" message and process only upon startup.
+network_task(beginMsg);
+
 basic.forever(() => {
 
 })
