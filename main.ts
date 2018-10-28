@@ -994,8 +994,12 @@ function msg_receive(task_id: number, msg: SensorMsg): void {
 function msg_post(task_id: number, msg: UARTMsg): void {
     //  TODO
     debug(">> msg_post ", msg.sendData)
+    serial.redirect(SerialPin.P0, SerialPin.P1, 9600)
+    serial.writeString(msg.sendData)
+    uartContext.response = "OK"; ////
+    //// uartContext.response = serial.readUntil(String.fromCharCode(msg.markerChar))
+    serial.redirectToUSB()
     uartContext.status = true;
-    uartContext.response = "OK";
 }
 function debug_print(p1: string, p2?: string): void {
     serial.writeString(p1)
@@ -1020,7 +1024,7 @@ setup_aggregate()
 network_setup()
 const beginMsg = createSensorMsg(BEGIN_SENSOR_NAME)
 network_task(beginMsg)
-basic.pause(2000)
+basic.pause(20 * 1000)
 let sensorMsg = createSensorMsg("tmp", 23.4)
 network_task(sensorMsg)
 basic.forever(function () {
