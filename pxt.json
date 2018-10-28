@@ -8,7 +8,8 @@
     "files": [
         "main.blocks",
         "main.ts",
-        "README.md"
+        "README.md",
+        "custom.ts"
     ],
     "targetVersions": {
         "branch": "v1.1.90",
@@ -16,5 +17,6 @@
         "commits": "https://github.com/Microsoft/pxt-microbit/commits/c571c91f0ba665843e5ae54b15d6b9bb7c316265",
         "target": "1.1.90",
         "pxt": "4.1.49"
-    }
+    },
+    "installedVersion": "workspace:dd5aa6c8-80e1-4804-58f6-b52d20bd94e9"
 }
