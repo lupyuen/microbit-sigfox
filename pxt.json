@@ -1,5 +1,5 @@
 {
-    "name": "wisol-mac",
+    "name": "wisol",
     "dependencies": {
         "core": "*",
         "radio": "*"
@@ -8,7 +8,13 @@
     "files": [
         "main.blocks",
         "main.ts",
-        "README.md",
-        "custom.ts"
-    ]
+        "README.md"
+    ],
+    "targetVersions": {
+        "branch": "v1.1.90",
+        "tag": "v1.1.90",
+        "commits": "https://github.com/Microsoft/pxt-microbit/commits/c571c91f0ba665843e5ae54b15d6b9bb7c316265",
+        "target": "1.1.90",
+        "pxt": "4.1.49"
+    }
 }
