@@ -143,7 +143,7 @@ namespace sigfox {
         //  Return the sensor data for the sensor name.  If not found, allocate
         //  a new SensorMsg and return it.  If no more space, return NULL.
         let emptyIndex = -1;
-        for (let q = 0; q < MAX_SENSOR_COUNT; q++) {
+        for (let q = 0; q < sensorData.length; q++) {
             //  Search for the sensor name in our data.
             if (name === sensorData[q].name) {
                 return sensorData[q];  //  Found it.
