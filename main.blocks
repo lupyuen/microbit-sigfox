@@ -2,8 +2,10 @@
   <variables>
     <variable type="" id="+mGNjUNh7BLY-`2qTr%3">beginMsg</variable>
     <variable type="" id="Vwva1hxsymfYyTho#f#f">sensorMsg</variable>
+    <variable type="" id="mh~#x/pMq7ar^z$eeI1G">tmp</variable>
   </variables>
-  <block type="pxt-on-start" x="0" y="0">
+  <block type="device_forever" x="685" y="0"></block>
+  <block type="pxt-on-start" x="96" y="48">
     <statement name="HANDLER">
       <block type="variables_set">
         <field name="VAR" id="+mGNjUNh7BLY-`2qTr%3" variabletype="">beginMsg</field>
@@ -96,5 +98,35 @@
       </block>
     </statement>
   </block>
-  <block type="device_forever" x="685" y="0"></block>
+  <block type="control_in_background" x="99" y="498">
+    <statement name="HANDLER">
+      <block type="device_while">
+        <value name="COND">
+          <shadow type="logic_boolean">
+            <field name="BOOL">TRUE</field>
+          </shadow>
+        </value>
+        <statement name="DO">
+          <block type="variables_set">
+            <field name="VAR" id="mh~#x/pMq7ar^z$eeI1G" variabletype="">tmp</field>
+            <value name="VALUE">
+              <shadow type="math_number" id="JNWT,[%I,9jK2ck5lJ;1">
+                <field name="NUM">0</field>
+              </shadow>
+              <block type="device_temperature"></block>
+            </value>
+            <next>
+              <block type="device_pause">
+                <value name="pause">
+                  <shadow type="timePicker">
+                    <field name="ms">20000</field>
+                  </shadow>
+                </value>
+              </block>
+            </next>
+          </block>
+        </statement>
+      </block>
+    </statement>
+  </block>
 </xml>

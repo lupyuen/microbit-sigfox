@@ -1,3 +1,4 @@
+let tmp = 0
 let sensorMsg: sigfox.SensorMsg = null
 let beginMsg: sigfox.SensorMsg = null
 beginMsg = sigfox.createSensorMsg(sigfox.BEGIN_SENSOR_NAME, 0)
@@ -10,4 +11,10 @@ basic.pause(20 * 1000)
 sigfox.network_task(sensorMsg)
 basic.forever(function () {
 	
+})
+control.inBackground(function () {
+    while (true) {
+        tmp = input.temperature()
+        basic.pause(20000)
+    }
 })
