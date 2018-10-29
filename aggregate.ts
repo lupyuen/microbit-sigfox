@@ -1,11 +1,14 @@
 namespace sigfox {
-    // /////////////////////////////////////////////////////////////////////////
-    // From aggregate.h const ENABLE_DOWNLINK = false  //
-    // Uplink data only
-    const ENABLE_DOWNLINK: boolean = true
+    // From aggregate.h
+
+    // Uncomment to disable downlink.
+    // const ENABLE_DOWNLINK = false
+    // Uncomment to enable downlink.
+    const ENABLE_DOWNLINK = true
     // Send a message to network every 20,000 milliseconds
     // = 20 seconds.
-    const SEND_INTERVAL: number = 20 * 1000
+    export const SEND_INTERVAL: number = 20 * 1000
+
     let sensorData: SensorMsg[] = []
     let payload: string = null
 

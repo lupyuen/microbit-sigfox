@@ -12,8 +12,12 @@
         "main.ts",
         "aggregate.ts",
         "custom.ts",
+        "downlink.ts",
         "platform.ts",
-        "sigfox.ts"
+        "sensor.ts",
+        "sigfox.ts",
+        "uart.ts",
+        "wisol.ts"
     ],
     "testFiles": [
         "test.ts"
