@@ -3,7 +3,7 @@
     <variable type="" id="+mGNjUNh7BLY-`2qTr%3">beginMsg</variable>
     <variable type="" id="Vwva1hxsymfYyTho#f#f">sensorMsg</variable>
   </variables>
-  <block type="pxt-on-start" x="20" y="20">
+  <block type="pxt-on-start" x="0" y="0">
     <statement name="HANDLER">
       <block type="variables_set">
         <field name="VAR" id="+mGNjUNh7BLY-`2qTr%3" variabletype="">beginMsg</field>
@@ -96,5 +96,5 @@
       </block>
     </statement>
   </block>
-  <block type="device_forever" x="705" y="20"></block>
+  <block type="device_forever" x="685" y="0"></block>
 </xml>

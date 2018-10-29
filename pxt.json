@@ -10,7 +10,10 @@
         "README.md",
         "main.blocks",
         "main.ts",
-        "custom.ts"
+        "aggregate.ts",
+        "custom.ts",
+        "platform.ts",
+        "sigfox.ts"
     ],
     "testFiles": [
         "test.ts"
