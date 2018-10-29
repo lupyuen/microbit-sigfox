@@ -109,7 +109,8 @@ namespace sigfox {
     SENSOR_NOT_READY = 255
     // Messages sent by Sensor Task containing sensor data
     // will be in this format.
-    interface SensorMsg {
+    //% block
+    export interface SensorMsg {
         // Msg_t super; //  Required for all cocoOS messages.
         name: string;   //  3-character name of sensor e.g. tmp, hmd. Includes terminating null.
         data: number[]; //  Array of float sensor data values returned by the sensor.
