@@ -16,6 +16,7 @@
         "platform.ts",
         "sensor.ts",
         "sigfox.ts",
+        "task.ts",
         "uart.ts",
         "wisol.ts"
     ],

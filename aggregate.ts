@@ -12,20 +12,6 @@ namespace sigfox {
     let sensorData: SensorMsg[] = []
     let payload: string = null
 
-    //% block
-    export function setup_aggregate() {
-        // Clear the aggregated sensor data.
-        sensorData = []
-        for (let i = 0; i < MAX_SENSOR_COUNT; i++) {
-            let sensor: SensorMsg = {
-                name: "",
-                count: 0,
-                data: [],
-            };
-            sensorData.push(sensor)
-        }
-    }
-
     // Buffer for constructing the message payload to be
     // sent, in hex digits, plus terminating null.
     const PAYLOAD_SIZE: number = 1 + MAX_MESSAGE_SIZE * 2
@@ -163,4 +149,17 @@ namespace sigfox {
         sensorData[emptyIndex].data = [];  //  Reset to empty in case we need to send.
         return sensorData[emptyIndex];
     }
+    //% block
+    export function setup_aggregate() {
+        // Init the list of aggregated sensor data.
+        sensorData = []
+        for (let i = 0; i < MAX_SENSOR_COUNT; i++) {
+            let sensor: SensorMsg = {
+                name: "",
+                count: 0,
+                data: [],
+            };
+            sensorData.push(sensor)
+        }
+    }    
 }
