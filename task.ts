@@ -1,9 +1,14 @@
 namespace sigfox {
     export const SIGFOX_SOURCE = 22569
-    let msg_queue: SensorMsg[] = []
+    export interface Msg_t {
+        sensorMsg?: SensorMsg
+        uartMsg?: UARTMsg
+    }
+
+    let msg_queue: Msg_t[] = []
     let next_task_id: uint8 = 1
 
-    export function msg_post(task_id: number, msg: SensorMsg): void {
+    export function msg_post(task_id: number, msg: Msg_t): void {
         if (task_id === 0) {
             debug("***** ERROR: msg_post / missing task ID")
             return
@@ -20,7 +25,7 @@ namespace sigfox {
         )    
     }
 
-    export function msg_receive(task_id: number): SensorMsg {
+    export function msg_receive(task_id: number): Msg_t {
         //  Returns "undefined" if queue is empty.
         return msg_queue.shift()
     }    

@@ -1,97 +1,103 @@
 <xml xmlns="http://www.w3.org/1999/xhtml">
   <variables>
-    <variable type="" id="Io1UESDQD!q:56Vwt47%">tmp</variable>
-    <variable type="" id="Sr~/b+}COyD3`I_+T^]w">sensorMsg</variable>
-    <variable type="" id="J(A(tS$z:x(ZnRPt%C,z">beginMsg</variable>
-    <variable type="" id=",#*~H#0H_k4rkEU6G}|4">network_task_id</variable>
+    <variable type="" id="lw3/h-JvYF05?HAc@Np5">tmp</variable>
+    <variable type="" id="I[4pm@ZqJg;ot{P$-Fy?">sensorMsg</variable>
+    <variable type="" id="b:28+SCk[-nhh[}epbi{">beginMsg</variable>
+    <variable type="" id="2KVtEp]`2QnVDbORlVu%">network_task_id</variable>
   </variables>
-  <block type="pxt-on-start" x="20" y="20">
+  <block type="pxt-on-start" x="0" y="0">
     <statement name="HANDLER">
       <block type="typescript_statement" editable="false">
-        <mutation line0="let beginMsg: sigfox.SensorMsg = null" numlines="1" declaredvars="beginMsg"></mutation>
-        <field name="LINE0">let beginMsg: sigfox.SensorMsg = null</field>
+        <mutation line0="let network_task_id = 0" numlines="1" declaredvars="network_task_id"></mutation>
+        <field name="LINE0">let network_task_id = 0</field>
         <next>
           <block type="typescript_statement" editable="false">
-            <mutation line0="let sensorMsg: sigfox.SensorMsg = null" numlines="1" declaredvars="sensorMsg"></mutation>
-            <field name="LINE0">let sensorMsg: sigfox.SensorMsg = null</field>
+            <mutation line0="let beginMsg: sigfox.Msg_t = null" numlines="1" declaredvars="beginMsg"></mutation>
+            <field name="LINE0">let beginMsg: sigfox.Msg_t = null</field>
             <next>
-              <block type="variables_set">
-                <field name="VAR" id="J(A(tS$z:x(ZnRPt%C,z" variabletype="">beginMsg</field>
-                <value name="VALUE">
-                  <shadow type="math_number">
-                    <field name="NUM">0</field>
-                  </shadow>
-                  <block type="sigfox_createSensorMsg">
-                    <value name="name">
-                      <block type="typescript_expression" editable="false">
-                        <field name="EXPRESSION">sigfox.BEGIN_SENSOR_NAME</field>
-                      </block>
-                    </value>
-                    <value name="value">
-                      <shadow type="math_number">
-                        <field name="NUM">0</field>
-                      </shadow>
-                    </value>
-                  </block>
-                </value>
+              <block type="typescript_statement" editable="false">
+                <mutation line0="let sensorMsg: sigfox.Msg_t = null" numlines="1" declaredvars="sensorMsg"></mutation>
+                <field name="LINE0">let sensorMsg: sigfox.Msg_t = null</field>
                 <next>
                   <block type="variables_set">
-                    <field name="VAR" id="Sr~/b+}COyD3`I_+T^]w" variabletype="">sensorMsg</field>
+                    <field name="VAR" id="b:28+SCk[-nhh[}epbi{" variabletype="">beginMsg</field>
                     <value name="VALUE">
                       <shadow type="math_number">
                         <field name="NUM">0</field>
                       </shadow>
                       <block type="sigfox_createSensorMsg">
                         <value name="name">
-                          <shadow type="text">
-                            <field name="TEXT">tmp</field>
-                          </shadow>
+                          <block type="typescript_expression" editable="false">
+                            <field name="EXPRESSION">sigfox.BEGIN_SENSOR_NAME</field>
+                          </block>
                         </value>
                         <value name="value">
                           <shadow type="math_number">
-                            <field name="NUM">23.4</field>
+                            <field name="NUM">0</field>
                           </shadow>
                         </value>
                       </block>
                     </value>
                     <next>
-                      <block type="sigfox_setup_aggregate">
-                        <comment pinned="false" h="120" w="160">Erase the aggregated sensor data.</comment>
-                        <next>
-                          <block type="variables_set">
-                            <field name="VAR" id=",#*~H#0H_k4rkEU6G}|4" variabletype="">network_task_id</field>
-                            <value name="VALUE">
-                              <shadow type="math_number">
-                                <field name="NUM">0</field>
+                      <block type="variables_set">
+                        <field name="VAR" id="I[4pm@ZqJg;ot{P$-Fy?" variabletype="">sensorMsg</field>
+                        <value name="VALUE">
+                          <shadow type="math_number">
+                            <field name="NUM">0</field>
+                          </shadow>
+                          <block type="sigfox_createSensorMsg">
+                            <value name="name">
+                              <shadow type="text">
+                                <field name="TEXT">tmp</field>
                               </shadow>
-                              <block type="sigfox_network_setup"></block>
                             </value>
+                            <value name="value">
+                              <shadow type="math_number">
+                                <field name="NUM">23.4</field>
+                              </shadow>
+                            </value>
+                          </block>
+                        </value>
+                        <next>
+                          <block type="sigfox_setup_aggregate">
+                            <comment pinned="false" h="120" w="160">Erase the aggregated sensor data.</comment>
                             <next>
-                              <block type="typescript_statement" editable="false">
-                                <mutation line0="sigfox.msg_post(network_task_id, beginMsg)" numlines="1"></mutation>
-                                <field name="LINE0">sigfox.msg_post(network_task_id, beginMsg)</field>
+                              <block type="variables_set">
+                                <field name="VAR" id="2KVtEp]`2QnVDbORlVu%" variabletype="">network_task_id</field>
+                                <value name="VALUE">
+                                  <shadow type="math_number">
+                                    <field name="NUM">0</field>
+                                  </shadow>
+                                  <block type="sigfox_network_setup"></block>
+                                </value>
                                 <next>
-                                  <block type="device_pause">
-                                    <value name="pause">
-                                      <shadow type="timePicker"></shadow>
-                                      <block type="math_arithmetic">
-                                        <field name="OP">MULTIPLY</field>
-                                        <value name="A">
-                                          <shadow type="math_number">
-                                            <field name="NUM">20</field>
-                                          </shadow>
-                                        </value>
-                                        <value name="B">
-                                          <shadow type="math_number">
-                                            <field name="NUM">1000</field>
-                                          </shadow>
-                                        </value>
-                                      </block>
-                                    </value>
+                                  <block type="typescript_statement" editable="false">
+                                    <mutation line0="sigfox.msg_post(network_task_id, beginMsg)" numlines="1"></mutation>
+                                    <field name="LINE0">sigfox.msg_post(network_task_id, beginMsg)</field>
                                     <next>
-                                      <block type="typescript_statement" editable="false">
-                                        <mutation line0="sigfox.msg_post(network_task_id, sensorMsg)" numlines="1"></mutation>
-                                        <field name="LINE0">sigfox.msg_post(network_task_id, sensorMsg)</field>
+                                      <block type="device_pause">
+                                        <value name="pause">
+                                          <shadow type="timePicker"></shadow>
+                                          <block type="math_arithmetic">
+                                            <field name="OP">MULTIPLY</field>
+                                            <value name="A">
+                                              <shadow type="math_number">
+                                                <field name="NUM">20</field>
+                                              </shadow>
+                                            </value>
+                                            <value name="B">
+                                              <shadow type="math_number">
+                                                <field name="NUM">1000</field>
+                                              </shadow>
+                                            </value>
+                                          </block>
+                                        </value>
+                                        <next>
+                                          <block type="typescript_statement" editable="false">
+                                            <mutation line0="sigfox.msg_post(network_task_id, sensorMsg)" numlines="1"></mutation>
+                                            <field name="LINE0">sigfox.msg_post(network_task_id, sensorMsg)</field>
+                                          </block>
+                                        </next>
                                       </block>
                                     </next>
                                   </block>
@@ -111,8 +117,8 @@
       </block>
     </statement>
   </block>
-  <block type="device_forever" x="20" y="585"></block>
-  <block type="control_in_background" x="225" y="585">
+  <block type="device_forever" x="685" y="0"></block>
+  <block type="control_in_background" x="890" y="0">
     <statement name="HANDLER">
       <block type="device_while">
         <value name="COND">
@@ -122,7 +128,7 @@
         </value>
         <statement name="DO">
           <block type="variables_set">
-            <field name="VAR" id="Io1UESDQD!q:56Vwt47%" variabletype="">tmp</field>
+            <field name="VAR" id="lw3/h-JvYF05?HAc@Np5" variabletype="">tmp</field>
             <value name="VALUE">
               <shadow type="math_number">
                 <field name="NUM">0</field>
@@ -131,7 +137,7 @@
             </value>
             <next>
               <block type="variables_set">
-                <field name="VAR" id="Sr~/b+}COyD3`I_+T^]w" variabletype="">sensorMsg</field>
+                <field name="VAR" id="I[4pm@ZqJg;ot{P$-Fy?" variabletype="">sensorMsg</field>
                 <value name="VALUE">
                   <shadow type="math_number">
                     <field name="NUM">0</field>
@@ -144,7 +150,7 @@
                     </value>
                     <value name="value">
                       <block type="variables_get">
-                        <field name="VAR" id="Io1UESDQD!q:56Vwt47%" variabletype="">tmp</field>
+                        <field name="VAR" id="lw3/h-JvYF05?HAc@Np5" variabletype="">tmp</field>
                       </block>
                     </value>
                   </block>

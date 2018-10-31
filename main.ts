@@ -1,7 +1,7 @@
-let network_task_id = 0
 let tmp = 0
-let beginMsg: sigfox.SensorMsg = null
-let sensorMsg: sigfox.SensorMsg = null
+let network_task_id = 0
+let beginMsg: sigfox.Msg_t = null
+let sensorMsg: sigfox.Msg_t = null
 beginMsg = sigfox.createSensorMsg(sigfox.BEGIN_SENSOR_NAME, 0)
 sensorMsg = sigfox.createSensorMsg("tmp", 23.4)
 // Erase the aggregated sensor data.

@@ -15,4 +15,21 @@ namespace sigfox {
         data: number[]; //  Array of float sensor data values returned by the sensor.
         count: uint8;        //  Number of float sensor data values returned by the sensor.
     }    
+    //% block
+    export function createSensorMsg(name: string, value?: number): Msg_t {
+        //  Populate the msg fields as an empty message.
+        let sensorMsg = <SensorMsg> {
+            name: name,
+            count: 0,  //  No data.
+            data: [],
+        }
+        if (value !== null) {
+            sensorMsg.count = 1;
+            sensorMsg.data = [value];
+        }
+        const msg = <Msg_t> {
+            sensorMsg: sensorMsg
+        }
+        return msg;
+    }    
 }

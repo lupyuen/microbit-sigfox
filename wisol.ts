@@ -64,7 +64,6 @@ namespace sigfox {
 
     //% block
     export function network_task(task_id: number, task_context: NetworkContext): void {
-    ////export function network_task(msg: SensorMsg): void {
         //  Loop to receive sensor data messages and send to UART Task to transmit to the network.
         const os_get_running_tid = () => task_id;
         const ctx = () => task_context;
@@ -75,13 +74,10 @@ namespace sigfox {
         if (!successEvent) { successEvent = event_create(); }  //  Create event for UART Task to indicate success.
         if (!failureEvent) { failureEvent = event_create(); }  //  Another event to indicate failure.
 
-        //// for (let j = 0; j < 1; j++) {  //  Run the sensor data receiving code once only.
-        for (;;) {  //  Run the sensor data receiving code forever. So the task never ends.
-            //  If not the first iteration, wait for an incoming message containing sensor data.
-            ////if (!msg || msg.name !== BEGIN_SENSOR_NAME) {
-            let msg = msg_receive(os_get_running_tid());
-            if (!msg) { break; }
-            ////}
+        for (;;) {  //  Receive the next sensor data message.
+            let msg_t = msg_receive(os_get_running_tid());
+            if (!msg_t) { break; }  //  If no message received, exit and try again later.
+            let msg = msg_t.sensorMsg;
 
             //  If this is a UART response message, process the pending response.
             if (msg.name === RESPONSE_SENSOR_NAME) {
@@ -157,7 +153,7 @@ namespace sigfox {
             debug(F("net >> Release net"));
             sem_signal(sendSemaphore);
         }  //  Loop to next incoming sensor data message.
-        task_close();  //  End of the task. Should not come here.
+        task_close();  //  End of the task.
     }
     function processPendingResponse(context: NetworkContext): void {
         //  If there is a pending response, e.g. from send payload...
@@ -574,18 +570,4 @@ namespace sigfox {
         }
         return n;
     }
-    //% block
-    export function createSensorMsg(name: string, value?: number): SensorMsg {
-        //  Populate the msg fields as an empty message.
-        let msg2: SensorMsg = {
-            name: name,
-            count: 0,  //  No data.
-            data: [],
-        };
-        if (value !== null) {
-            msg2.count = 1;
-            msg2.data = [value];
-        }
-        return msg2;
-    }    
 }
