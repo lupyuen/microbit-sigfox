@@ -15,7 +15,7 @@ namespace sigfox {
     let next_task_id: uint8 = 1
 
     export function msg_post(task_id: number, msg: Msg_t): void {
-        if (task_id === 0) {
+        if (task_id === 0 || !msg_queues[task_id]) {
             serial.writeLine("***** ERROR: msg_post / missing task ID")
             return
         }
@@ -33,7 +33,7 @@ namespace sigfox {
 
     export function msg_receive(task_id: number): Msg_t {
         //  Returns "undefined" if queue is empty.
-        if (task_id === 0) {
+        if (task_id === 0 || !msg_queues[task_id]) {
             serial.writeLine("***** ERROR: msg_receive / missing task ID")
             return null
         }
