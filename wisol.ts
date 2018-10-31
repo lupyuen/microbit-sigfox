@@ -63,11 +63,11 @@ namespace sigfox {
     let responseMsg: SensorMsg = null
 
     //% block
-    export function network_task(msg: SensorMsg): void {
-        //  Loop forever, receiving sensor data messages and sending to UART Task to transmit to the network.
-        //  Note: Declare task variables here before task_open() but don't populate them here
-        //  unless they are not supposed to change. Because the coroutine will execute this code 
-        //  repeatedly and repopulate the values.
+    export function network_task(task_id: number, task_context: NetworkContext): void {
+    ////export function network_task(msg: SensorMsg): void {
+        //  Loop to receive sensor data messages and send to UART Task to transmit to the network.
+        const os_get_running_tid = () => task_id;
+        const ctx = () => task_context;
         let cmd: NetworkCmd;
         let shouldSend: boolean;
 
@@ -75,7 +75,14 @@ namespace sigfox {
         if (!successEvent) { successEvent = event_create(); }  //  Create event for UART Task to indicate success.
         if (!failureEvent) { failureEvent = event_create(); }  //  Another event to indicate failure.
 
-        for (let j = 0; j < 1; j++) {  //  Run the sensor data receiving code once only.
+        //// for (let j = 0; j < 1; j++) {  //  Run the sensor data receiving code once only.
+        for (;;) {  //  Run the sensor data receiving code forever. So the task never ends.
+            //  If not the first iteration, wait for an incoming message containing sensor data.
+            ////if (!msg || msg.name !== BEGIN_SENSOR_NAME) {
+            let msg = msg_receive(os_get_running_tid());
+            if (!msg) { break; }
+            ////}
+
             //  If this is a UART response message, process the pending response.
             if (msg.name === RESPONSE_SENSOR_NAME) {
                 processPendingResponse(ctx());
@@ -122,7 +129,7 @@ namespace sigfox {
 
                 //  Transmit the UART command to the UART port by sending to the UART Task.
                 //  msg_post() is a synchronised send - it waits for the queue to be available before sending.
-                msg_post(ctx().uartTaskID, uartMsg);  //  Send the message to the UART task for transmission.
+                msg_post_uart(ctx().uartTaskID, uartMsg);  //  Send the message to the UART task for transmission.
 
                 //  When sending the last step of Sigfox message payload: Break out of the loop and release the semaphore lock. 
                 if (uartMsg.responseMsg) { //  This is the last command in the list and it will take some time.  Instead of waiting for

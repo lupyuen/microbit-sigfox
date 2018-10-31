@@ -24,10 +24,26 @@ namespace sigfox {
         msg: UARTMsg;  //  Message being sent. Set by uart_task() upon receiving a message.
     }
     // From uart.cpp
+    let uartContext: UARTContext = null;
     export function setup_uart(
         context: UARTContext,  //  Will be used to store the context of the UART Task.
         response: string): void {      //  Buffer that will be used to store the UART response.
         //  Init the UART context with the response buffer.
         context.response = response;
-    }    
+        uartContext = context;
+    }
+    export function msg_post_uart(task_id: number, msg: UARTMsg): void {
+        //  TODO
+        if (!uartContext) {
+            debug("***** ERROR: msg_post_uart / missing UART context")
+            return;
+        }
+        debug(">> msg_post_uart ", msg.sendData)
+        serial.redirect(SerialPin.P0, SerialPin.P1, 9600)
+        serial.writeString(msg.sendData)
+        uartContext.response = "OK"; ////
+        //// uartContext.response = serial.readUntil(String.fromCharCode(msg.markerChar))
+        serial.redirectToUSB()
+        uartContext.status = true;
+    }
 }
