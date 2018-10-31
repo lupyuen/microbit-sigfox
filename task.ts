@@ -10,7 +10,8 @@ namespace sigfox {
         uartContext?: UARTContext
     }
 
-    let msg_queue: Msg_t[] = []
+    //  msg_queues[task_id] is the message queue for the task.  msg_queues[0] is not used because task_id starts at 1.
+    let msg_queues: Msg_t[][] = [[]]
     let next_task_id: uint8 = 1
 
     export function msg_post(task_id: number, msg: Msg_t): void {
@@ -22,7 +23,7 @@ namespace sigfox {
             serial.writeLine("***** ERROR: msg_post / missing msg")
             return
         }
-        msg_queue.push(msg)
+        msg_queues[task_id].push(msg)
         //  Signal to the receiving task that a message is available.
         control.raiseEvent(
             SIGFOX_SOURCE,
@@ -32,7 +33,11 @@ namespace sigfox {
 
     export function msg_receive(task_id: number): Msg_t {
         //  Returns "undefined" if queue is empty.
-        return msg_queue.shift()
+        if (task_id === 0) {
+            serial.writeLine("***** ERROR: msg_receive / missing task ID")
+            return null
+        }
+        return msg_queues[task_id].shift()
     }    
 
     export function task_create(
@@ -46,6 +51,7 @@ namespace sigfox {
         const task_context = context
         const task_id = next_task_id
         next_task_id++
+        msg_queues.push([])  //  Allocate a new message queue for the new task.
         control.onEvent(SIGFOX_SOURCE, task_id, function () {
             task_func(task_id, task_context)
         })

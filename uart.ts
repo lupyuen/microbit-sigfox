@@ -82,7 +82,6 @@ namespace sigfox {
                 //// ctx().response = serial.readUntil(String.fromCharCode(msg.markerChar));
                 serial.redirectToUSB();
                 ctx().status = true;
-
             }
         }  //  Loop to next incoming UART message.
         task_close();  //  End of the task.

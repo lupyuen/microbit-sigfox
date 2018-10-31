@@ -18,6 +18,6 @@ control.inBackground(function () {
         tmp = input.temperature()
         sensorMsg = sigfox.createSensorMsg("tmp", tmp)
         sigfox.msg_post(network_task_id, sensorMsg)
-        basic.pause(20 * 1000)
+basic.pause(20 * 1000)
     }
 })
