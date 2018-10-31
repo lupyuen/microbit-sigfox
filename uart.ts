@@ -34,22 +34,6 @@ namespace sigfox {
         context.response = response;
         uartContext = context;
     }
-    /*
-    export function msg_post_uart(task_id: number, msg: UARTMsg): void {
-        //  TODO
-        if (!uartContext) {
-            debug("***** ERROR: msg_post_uart / missing UART context")
-            return;
-        }
-        debug(">> msg_post_uart ", msg.sendData)
-        serial.redirect(SerialPin.P0, SerialPin.P1, 9600)
-        serial.writeString(msg.sendData)
-        uartContext.response = "OK"; ////
-        //// uartContext.response = serial.readUntil(String.fromCharCode(msg.markerChar))
-        serial.redirectToUSB()
-        uartContext.status = true;
-    }
-    */
     //% block
     export function uart_task(task_id: number, task_context: Context_t): void {
         //  Simplified UART Task.
@@ -60,7 +44,7 @@ namespace sigfox {
         const os_get_running_tid = () => task_id;
         const ctx = () => task_context.uartContext;
         task_open();  //  Start of the task. Must be matched with task_close().  
-        for (;;) {  //  Receive the next UART message.
+        for (; ;) {  //  Receive the next UART message.
             let msg_t = msg_receive(os_get_running_tid());
             if (!msg_t) { break; }  //  If no message received, exit and try again later.
             let msg = msg_t.uartMsg;
@@ -71,8 +55,8 @@ namespace sigfox {
             }
             if (msg.debugMsg) {
                 //  If this is a debug message, show the message on console.
-                ////serial.writeString(msg.sendData);
-                serial.writeLine(msg.sendData);
+                serial.writeString(msg.sendData);
+                ////serial.writeLine("debug >> " + msg.sendData);
             } else {
                 //  If this is a Wisol message, send to the Wisol module.
                 serial.writeLine(">> msg_post_uart " + msg.sendData);
@@ -85,5 +69,5 @@ namespace sigfox {
             }
         }  //  Loop to next incoming UART message.
         task_close();  //  End of the task.
-    }    
+    }
 }

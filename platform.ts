@@ -7,23 +7,23 @@ namespace sigfox {
 
     let uartTaskID = 0
     //  TODO
-    export function led_toggle() {}
-    export function debug_flush() {}
+    export function led_toggle() { }
+    export function debug_flush() { }
     export function millis(): int32 {
         //  Number of seconds elapsed since power on.
         return input.runningTime()
     }
     export function F(s: string): string { return s; }
-    
-    export function debug(p1: string, p2?: string): void {
+
+    export function debug(p1: string, p2: string = null): void {
         debug_println(p1, p2);
     }
-    export function debug_println(p1: string, p2?: string): void {
-        const s = p1 + (p2 === null) ? "" : p2;
+    export function debug_println(p1: string, p2: string = null): void {
+        const s = p1 + ((p2 === null) ? "" : p2);
         uart_write(s + "\n");
     }
-    export function debug_print(p1: string, p2?: string): void {
-        const s = p1 + (p2 === null) ? "" : p2;
+    export function debug_print(p1: string, p2: string = null): void {
+        const s = p1 + ((p2 === null) ? "" : p2);
         uart_write(s);
     }
     export function set_uart_task_id(task_id: number): void {
@@ -35,7 +35,7 @@ namespace sigfox {
             return;
         }
         const uartMsg = <UARTMsg>{
-            debugMsg: true,            
+            debugMsg: true,
             sendData: s,
             //  Set to default values below, not used.
             timeout: 0,
