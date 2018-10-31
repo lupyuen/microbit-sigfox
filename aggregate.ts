@@ -43,15 +43,16 @@ namespace sigfox {
 
         //  Aggregate the sensor data.  Here we just save the last value for each sensor.
         let savedSensor: SensorMsg = recallSensor(msg.name);
-        debug(msg.name, "1a"); ////
         if (!savedSensor) return false;  //  Return error.
-        debug(msg.name, "1b"); ////
         copySensorData(savedSensor, msg);  //  Copy the data from the received message into the saved data.
-        debug(msg.name, "1c"); ////
 
         //  Throttle the sending.  TODO: Show warning if messages are sent faster than SEND_DELAY.
         let now = millis();
-        if ((context.lastSend + SEND_INTERVAL) > now) { return false; }  //  Not ready to send.
+        if ((context.lastSend + SEND_INTERVAL) > now) {
+            //  Not ready to send.
+            debug(msg.name, " || throttled"); ////
+            return false;
+        }
         context.lastSend = now + MAX_TIMEOUT;  //  Prevent other requests from trying to send.
         debug(msg.name, "2"); ////
 
@@ -161,5 +162,5 @@ namespace sigfox {
             };
             sensorData.push(sensor)
         }
-    }    
+    }
 }
