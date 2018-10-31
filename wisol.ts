@@ -63,10 +63,14 @@ namespace sigfox {
     let responseMsg: SensorMsg = null
 
     //% block
-    export function network_task(task_id: number, task_context: NetworkContext): void {
+    export function network_task(task_id: number, task_context: Context_t): void {
         //  Loop to receive sensor data messages and send to UART Task to transmit to the network.
+        if (!task_context || !task_context.networkContext) {
+            debug("***** ERROR: network_task / missing context");
+            return;
+        }
         const os_get_running_tid = () => task_id;
-        const ctx = () => task_context;
+        const ctx = () => task_context.networkContext;
         let cmd: NetworkCmd;
         let shouldSend: boolean;
 
@@ -78,6 +82,10 @@ namespace sigfox {
             let msg_t = msg_receive(os_get_running_tid());
             if (!msg_t) { break; }  //  If no message received, exit and try again later.
             let msg = msg_t.sensorMsg;
+            if (!msg) {
+                debug("***** ERROR: network_task / msg is empty");
+                break;
+            }
 
             //  If this is a UART response message, process the pending response.
             if (msg.name === RESPONSE_SENSOR_NAME) {
@@ -124,8 +132,9 @@ namespace sigfox {
                 ctx().pendingProcessFunc = cmd.processFunc;   //  Call this function to process response later.
 
                 //  Transmit the UART command to the UART port by sending to the UART Task.
-                //  msg_post() is a synchronised send - it waits for the queue to be available before sending.
-                msg_post_uart(ctx().uartTaskID, uartMsg);  //  Send the message to the UART task for transmission.
+                uartMsg.debugMsg = false;
+                const msg_t = <Msg_t>{ uartMsg: uartMsg };
+                msg_post(ctx().uartTaskID, msg_t);  //  Send the message to the UART task for transmission.
 
                 //  When sending the last step of Sigfox message payload: Break out of the loop and release the semaphore lock. 
                 if (uartMsg.responseMsg) { //  This is the last command in the list and it will take some time.  Instead of waiting for
@@ -536,6 +545,7 @@ namespace sigfox {
 
         //  Init the UART message.
         uartMsg = {
+            debugMsg: false,
             sendData: null,
             timeout: 0,
             markerChar: 0,

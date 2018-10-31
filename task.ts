@@ -1,8 +1,13 @@
 namespace sigfox {
+    //  Don't use debug() in this module since it's called by platform.ts.
     export const SIGFOX_SOURCE = 22569
     export interface Msg_t {
         sensorMsg?: SensorMsg
         uartMsg?: UARTMsg
+    }
+    export interface Context_t {
+        networkContext?: NetworkContext
+        uartContext?: UARTContext
     }
 
     let msg_queue: Msg_t[] = []
@@ -10,11 +15,11 @@ namespace sigfox {
 
     export function msg_post(task_id: number, msg: Msg_t): void {
         if (task_id === 0) {
-            debug("***** ERROR: msg_post / missing task ID")
+            serial.writeLine("***** ERROR: msg_post / missing task ID")
             return
         }
         if (!msg) {
-            debug("***** ERROR: msg_post / missing msg")
+            serial.writeLine("***** ERROR: msg_post / missing msg")
             return
         }
         msg_queue.push(msg)
@@ -31,11 +36,11 @@ namespace sigfox {
     }    
 
     export function task_create(
-        task_func: (task_id0: number, task_context0: NetworkContext) => void,
-        context: NetworkContext
+        task_func: (task_id0: number, task_context0: Context_t) => void,
+        context: Context_t
     ): number {
         if (!context) {
-            debug("***** ERROR: task_create / missing context")
+            serial.writeLine("***** ERROR: task_create / missing context")
             return 0
         }
         const task_context = context

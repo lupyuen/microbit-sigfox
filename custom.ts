@@ -11,40 +11,41 @@ namespace sigfox {
         setup_uart(
             uartContext,  //  Init the context for UART Task.
             uartResponse);
-        /*
+        const uartContextWrapped = <Context_t>{ uartContext: uartContext };
         const uartTaskID = task_create(
-        uart_task,     //  Task will run this function.
-        &uartContext,  //  task_get_data() will be set to the display object.
-        10,            //  Priority 10 = highest priority
-        (Msg_t *) uartMsgPool,  //  Pool to be used for storing the queue of UART messages.
-        UART_MSG_POOL_SIZE,     //  Size of queue pool.
-        sizeof(UARTMsg));       //  Size of queue message.
-        */
+            uart_task,     //  Task will run this function.
+            uartContextWrapped,  //  task_get_data() will be set to the display object.
+            // 10,            //  Priority 10 = highest priority
+            // (Msg_t *) uartMsgPool,  //  Pool to be used for storing the queue of UART messages.
+            // UART_MSG_POOL_SIZE,     //  Size of queue pool.
+            // sizeof(UARTMsg)         //  Size of queue message.
+        );
         
         // Start the Network Task for receiving sensor data
         // and transmitting to UART Task.
         setup_wisol(
             wisolContext,  //  Init the context for the Network Task.
             uartContext,
-            0,  //  uartTaskID
+            uartTaskID,
             Country.COUNTRY_SG,  //  Change this to your country code. Affects the Sigfox frequency used.
-            false);
-        
+            false);        
+        const wisolContextWrapped = <Context_t>{ networkContext: wisolContext };
         const networkTaskID = task_create(
             network_task,   //  Task will run this function.
-            wisolContext,  //  task_get_data() will be set to the display object.
+            wisolContextWrapped,  //  task_get_data() will be set to the display object.
             // 20,             //  Priority 20 = lower priority than UART task
             // (Msg_t *) networkMsgPool,  //  Pool to be used for storing the queue of UART messages.
             // NETWORK_MSG_POOL_SIZE,     //  Size of queue pool.
             // sizeof(SensorMsg)   //  Size of queue message.
         );
+
+        set_uart_task_id(uartTaskID);  //  Remember the UART Task ID for sending debug messages.
         return networkTaskID;        
     }
 
     let uartResponse: string = null
 
-    // TODO
-    let uartContext: UARTContext = {
+    let uartContext = <UARTContext> {
         status: false,
         sendIndex: 0,
         sentTime: 0,
@@ -53,7 +54,7 @@ namespace sigfox {
         testTimer: 0,
         msg: null,
     }
-    let wisolContext: NetworkContext = {
+    let wisolContext = <NetworkContext> {
         uartContext: null,
         uartTaskID: 0,
         zone: 0,

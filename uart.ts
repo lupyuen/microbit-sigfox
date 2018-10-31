@@ -1,7 +1,8 @@
 namespace sigfox {
-    // From uart.h
-    // UART Task accepts messages of this format for
-    // sending data.
+    //  Don't use debug() in this module since it's called by platform.ts.
+    //  From uart.h
+    //  UART Task accepts messages of this format for
+    //  sending data.
     export interface UARTMsg {
         //  Msg_t super;  //  Required for all cocoOS messages.
         sendData: string;  //  Pointer to the string to be sent.
@@ -12,6 +13,7 @@ namespace sigfox {
         failureEvent: Evt_t;  //  Event to be triggered upon failure.
         responseMsg: SensorMsg;  //  If not NULL, then send this response message when the response is completed.
         responseTaskID: uint8;  //  Send to this task ID.
+        debugMsg: boolean;  //  True if this is a message to be shown on debug console.
     }
     // UART Task maintains this context in the task data.
     export interface UARTContext {
@@ -32,6 +34,7 @@ namespace sigfox {
         context.response = response;
         uartContext = context;
     }
+    /*
     export function msg_post_uart(task_id: number, msg: UARTMsg): void {
         //  TODO
         if (!uartContext) {
@@ -46,4 +49,42 @@ namespace sigfox {
         serial.redirectToUSB()
         uartContext.status = true;
     }
+    */
+    //% block
+    export function uart_task(task_id: number, task_context: Context_t): void {
+        //  Simplified UART Task.
+        if (!task_context || !task_context.uartContext) {
+            serial.writeLine("***** ERROR: uart_task / missing context");
+            return;
+        }
+        const os_get_running_tid = () => task_id;
+        const ctx = () => task_context.uartContext;
+        task_open();  //  Start of the task. Must be matched with task_close().  
+        for (;;) {  //  Receive the next UART message.
+            let msg_t = msg_receive(os_get_running_tid());
+            if (!msg_t) { break; }  //  If no message received, exit and try again later.
+            let msg = msg_t.uartMsg;
+            if (!msg) {
+                serial.redirectToUSB();
+                serial.writeLine("***** ERROR: uart_task / msg is empty");
+                break;
+            }
+            if (msg.debugMsg) {
+                //  If this is a debug message, show the message on console.
+                ////serial.writeString(msg.sendData);
+                serial.writeLine(msg.sendData);
+            } else {
+                //  If this is a Wisol message, send to the Wisol module.
+                serial.writeLine(">> msg_post_uart " + msg.sendData);
+                serial.redirect(SerialPin.P0, SerialPin.P1, 9600);
+                serial.writeString(msg.sendData);
+                ctx().response = "OK"; ////
+                //// ctx().response = serial.readUntil(String.fromCharCode(msg.markerChar));
+                serial.redirectToUSB();
+                ctx().status = true;
+
+            }
+        }  //  Loop to next incoming UART message.
+        task_close();  //  End of the task.
+    }    
 }
