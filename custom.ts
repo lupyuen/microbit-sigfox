@@ -3,7 +3,7 @@ namespace sigfox {
     export let network_task_id = 0
 
     //% block
-    export function setup(sendSensors: string[]): void {
+    export function setupSigfox(sendSensors: string[]): void {
         //  TODO: Validate sendSensors.
         //  Disable the LED because it may interfere with other sensors.
         led.enable(false)
@@ -19,7 +19,7 @@ namespace sigfox {
     }
 
     //% block
-    export function process_sensor_data(name: string, value: number): void {
+    export function sendToSigfox(name: string, value: number): void {
         const msg = sigfox.createSensorMsg(name, value)
         sigfox.msg_post(network_task_id, msg)
     }
