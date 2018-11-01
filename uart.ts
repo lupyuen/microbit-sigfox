@@ -47,36 +47,46 @@ namespace sigfox {
         for (; ;) {  //  Receive the next UART message.
             let msg_t = msg_receive(os_get_running_tid());
             if (!msg_t) { break; }  //  If no message received, exit and try again later.
-            let msg = msg_t.uartMsg;
-            if (!msg) {
+            ctx().msg = msg_t.uartMsg;
+            if (!ctx().msg) {
                 serial.redirectToUSB();
                 serial.writeLine("***** ERROR: uart_task / msg is empty");
                 break;
             }
-            if (msg.debugMsg) {
+            if (ctx().msg.debugMsg) {
                 //  If this is a debug message, show the message on console.
-                serial.writeString(msg.sendData);
-                ////serial.writeLine("debug >> " + msg.sendData);
+                serial.writeString(ctx().msg.sendData);
                 continue;
             }
             //  If this is a Wisol message, send to the Wisol module.
-            serial.writeLine(">> msg_post_uart " + msg.sendData);
+            const marker = String.fromCharCode(ctx().msg.markerChar);
+            ctx().response = "";
+            serial.writeLine(">> " + ctx().msg.sendData);
             serial.redirect(SerialPin.P0, SerialPin.P1, 9600);
-            serial.writeString(msg.sendData);
+
+            serial.writeString(ctx().msg.sendData);
             ctx().response = "OK"; ////
-            //// ctx().response = serial.readUntil(String.fromCharCode(msg.markerChar));
-            serial.redirectToUSB();
+            for (let i = 0; i < ctx().msg.expectedMarkerCount; i++) {
+                ////const line = serial.readUntil(marker)
+                ////ctx().response = ctx().response + marker;
+            }
             ctx().status = true; ////
+
+            serial.redirectToUSB();
+            serial.writeLine("<< " + ctx().response);
 
             if (ctx().msg.responseMsg) {
                 //  If caller has requested for response message, then send it instead of event.
+                serial.writeLine("uart_task: response msg"); ////
                 msg_post(ctx().msg.responseTaskID, ctx().msg.responseMsg);
             } else if (ctx().status) {
                 //  If no error, trigger the success event to caller.
                 //  The caller can read the response from the context.response.
-                event_signal(ctx().msg.successEvent);      
+                serial.writeLine("uart_task: success"); ////
+                event_signal(ctx().msg.successEvent);
             } else {
                 //  If we hit an error, trigger the failure event to the caller.
+                serial.writeLine("uart_task: failure"); ////
                 event_signal(ctx().msg.failureEvent);  //  Trigger the failure event.
             }
 
