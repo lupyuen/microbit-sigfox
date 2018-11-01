@@ -3,7 +3,10 @@ namespace sigfox {
     export let network_task_id = 0
 
     //% block
-    export function setupSigfox(sendSensors: string[]): void {
+    export function setupSigfox(
+        country: Country,
+        sendSensors: string[]
+    ): void {
         //  TODO: Validate sendSensors.
         //  Disable the LED because it may interfere with other sensors.
         led.enable(false)
@@ -11,7 +14,7 @@ namespace sigfox {
         //  Erase the aggregated sensor data.
         setup_aggregate(sendSensors)
         //  Start the Network Task to send and receive network messages.
-        network_task_id = network_setup()
+        network_task_id = network_setup(country)
         //  Initialise the Wisol module.
         msg_post(network_task_id, msg)
         //  Wait for Wisol module to be initialised.
@@ -19,13 +22,16 @@ namespace sigfox {
     }
 
     //% block
-    export function sendToSigfox(name: string, value: number): void {
+    export function sendToSigfox(
+        name: string,
+        value: number
+    ): void {
         const msg = sigfox.createSensorMsg(name, value)
         sigfox.msg_post(network_task_id, msg)
     }
 
     //% block
-    export function network_setup(): number {
+    export function network_setup(country: Country): number {
         // Start the Network Task to send and receive network
         // messages. Also starts the UART Task called by the
         // Network Task to send/receive data to the UART port.
@@ -52,7 +58,7 @@ namespace sigfox {
             wisolContext,  //  Init the context for the Network Task.
             uartContext,
             uartTaskID,
-            Country.COUNTRY_SG,  //  Change this to your country code. Affects the Sigfox frequency used.
+            country,
             false);        
         const wisolContextWrapped = <Context_t>{ networkContext: wisolContext };
         const networkTaskID = task_create(
