@@ -131,6 +131,10 @@ namespace sigfox {
                 ctx().lastSend = millis() + uartMsg.timeout;  //  Estimate last send time for the next command.
                 ctx().pendingProcessFunc = cmd.processFunc;   //  Call this function to process response later.
 
+                //  Reset the event signals.
+                event_reset(successEvent);
+                event_reset(failureEvent);
+
                 //  Transmit the UART command to the UART port by sending to the UART Task.
                 uartMsg.debugMsg = false;
                 const msg_t = <Msg_t>{ uartMsg: uartMsg };
@@ -483,7 +487,7 @@ namespace sigfox {
             uartData = uartData + cmd.payload;
             uartMsg.timeout = UPLINK_TIMEOUT;  //  Increase timeout for uplink.
             //  If there is payload to send, send the response message when sending is completed.
-            uartMsg.responseMsg = responseMsg;
+            uartMsg.responseMsg = <Msg_t>{ sensorMsg: responseMsg };
             uartMsg.responseTaskID = responseTaskID;
         }
         if (cmd.sendData2) {

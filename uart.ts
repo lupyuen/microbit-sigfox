@@ -11,7 +11,7 @@ namespace sigfox {
         expectedMarkerCount: uint8;  //  Wait for this number of markers until timeout.
         successEvent: Evt_t;  //  Event to be triggered upon success.
         failureEvent: Evt_t;  //  Event to be triggered upon failure.
-        responseMsg: SensorMsg;  //  If not NULL, then send this response message when the response is completed.
+        responseMsg: Msg_t;  //  If not NULL, then send this response message when the response is completed.
         responseTaskID: uint8;  //  Send to this task ID.
         debugMsg: boolean;  //  True if this is a message to be shown on debug console.
     }
@@ -57,16 +57,29 @@ namespace sigfox {
                 //  If this is a debug message, show the message on console.
                 serial.writeString(msg.sendData);
                 ////serial.writeLine("debug >> " + msg.sendData);
-            } else {
-                //  If this is a Wisol message, send to the Wisol module.
-                serial.writeLine(">> msg_post_uart " + msg.sendData);
-                serial.redirect(SerialPin.P0, SerialPin.P1, 9600);
-                serial.writeString(msg.sendData);
-                ctx().response = "OK"; ////
-                //// ctx().response = serial.readUntil(String.fromCharCode(msg.markerChar));
-                serial.redirectToUSB();
-                ctx().status = true;
+                continue;
             }
+            //  If this is a Wisol message, send to the Wisol module.
+            serial.writeLine(">> msg_post_uart " + msg.sendData);
+            serial.redirect(SerialPin.P0, SerialPin.P1, 9600);
+            serial.writeString(msg.sendData);
+            ctx().response = "OK"; ////
+            //// ctx().response = serial.readUntil(String.fromCharCode(msg.markerChar));
+            serial.redirectToUSB();
+            ctx().status = true; ////
+
+            if (ctx().msg.responseMsg) {
+                //  If caller has requested for response message, then send it instead of event.
+                msg_post(ctx().msg.responseTaskID, ctx().msg.responseMsg);
+            } else if (ctx().status) {
+                //  If no error, trigger the success event to caller.
+                //  The caller can read the response from the context.response.
+                event_signal(ctx().msg.successEvent);      
+            } else {
+                //  If we hit an error, trigger the failure event to the caller.
+                event_signal(ctx().msg.failureEvent);  //  Trigger the failure event.
+            }
+
         }  //  Loop to next incoming UART message.
         task_close();  //  End of the task.
     }
