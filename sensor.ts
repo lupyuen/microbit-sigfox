@@ -1,3 +1,4 @@
+//% color="purple" block="Sigfox"
 namespace sigfox {
     // From sensor.h
     export const MAX_SENSOR_DATA_SIZE = 3

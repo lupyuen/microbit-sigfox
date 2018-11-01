@@ -1,3 +1,4 @@
+//% color="purple" block="Sigfox"
 namespace sigfox {
     // From wisol.h
     export const MAX_NETWORK_CMD_LIST_SIZE = 5

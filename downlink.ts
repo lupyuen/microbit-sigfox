@@ -1,3 +1,4 @@
+//% color="purple" block="Sigfox"
 namespace sigfox {
     // From downlink.cpp
     export function process_downlink_msg(

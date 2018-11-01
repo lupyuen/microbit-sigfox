@@ -1,4 +1,4 @@
-//% color=purple block="Sigfox"
+//% color="purple" block="Sigfox"
 namespace sigfox {
     //% block
     export let network_task_id = 0
