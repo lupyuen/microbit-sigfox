@@ -1,3 +1,4 @@
+//% color=purple block="Sigfox"
 namespace sigfox {
     //% block
     export let network_task_id = 0
@@ -51,7 +52,7 @@ namespace sigfox {
             // UART_MSG_POOL_SIZE,     //  Size of queue pool.
             // sizeof(UARTMsg)         //  Size of queue message.
         );
-        
+
         // Start the Network Task for receiving sensor data
         // and transmitting to UART Task.
         setup_wisol(
@@ -59,7 +60,7 @@ namespace sigfox {
             uartContext,
             uartTaskID,
             country,
-            false);        
+            false);
         const wisolContextWrapped = <Context_t>{ networkContext: wisolContext };
         const networkTaskID = task_create(
             network_task,   //  Task will run this function.
@@ -71,12 +72,12 @@ namespace sigfox {
         );
 
         set_uart_task_id(uartTaskID);  //  Remember the UART Task ID for sending debug messages.
-        return networkTaskID;        
+        return networkTaskID;
     }
 
     let uartResponse: string = null
 
-    let uartContext = <UARTContext> {
+    let uartContext = <UARTContext>{
         status: false,
         sendIndex: 0,
         sentTime: 0,
@@ -85,7 +86,7 @@ namespace sigfox {
         testTimer: 0,
         msg: null,
     }
-    let wisolContext = <NetworkContext> {
+    let wisolContext = <NetworkContext>{
         uartContext: null,
         uartTaskID: 0,
         zone: 0,
@@ -105,5 +106,5 @@ namespace sigfox {
 
         cmdList: null,
         cmdIndex: 0,
-    };    
+    };
 }
