@@ -1,4 +1,3 @@
-//% color="purple" block="Sigfox"
 namespace sigfox {
     // From platform.h
     export const MAX_SENSOR_COUNT: number = 3

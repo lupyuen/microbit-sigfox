@@ -1,4 +1,3 @@
-//% color="purple" block="Sigfox"
 namespace sigfox {
     // From sigfox.h
     export const MAX_DEVICE_ID_SIZE: number = 8

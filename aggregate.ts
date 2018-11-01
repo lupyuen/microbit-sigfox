@@ -1,4 +1,3 @@
-//% color="purple" block="Sigfox"
 namespace sigfox {
     // From aggregate.h
 

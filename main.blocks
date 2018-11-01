@@ -1,2 +1,170 @@
 <xml xmlns="http://www.w3.org/1999/xhtml">
+  <variables>
+    <variable type="" id="0YUPzRgqT){15R|;CA5[">tmp</variable>
+    <variable type="" id=",,aJQk`.iJvzMlV/V$jq">cmp</variable>
+    <variable type="" id="Cvd~a4##[Hi~^v9xCO=N">lig</variable>
+  </variables>
+  <block type="pxt-on-start" x="0" y="0">
+    <statement name="HANDLER">
+      <block type="sigfox_setupSigfox">
+        <field name="country">sigfox.Country.COUNTRY_SG</field>
+        <value name="sendSensors">
+          <block type="lists_create_with">
+            <mutation items="3"></mutation>
+            <value name="ADD0">
+              <shadow type="text">
+                <field name="TEXT">tmp</field>
+              </shadow>
+            </value>
+            <value name="ADD1">
+              <shadow type="text">
+                <field name="TEXT">lig</field>
+              </shadow>
+            </value>
+            <value name="ADD2">
+              <shadow type="text">
+                <field name="TEXT">cmp</field>
+              </shadow>
+            </value>
+          </block>
+        </value>
+      </block>
+    </statement>
+  </block>
+  <block type="device_forever" x="764" y="1"></block>
+  <block type="control_in_background" x="4" y="140">
+    <statement name="HANDLER">
+      <block type="device_while">
+        <value name="COND">
+          <shadow type="logic_boolean">
+            <field name="BOOL">TRUE</field>
+          </shadow>
+        </value>
+        <statement name="DO">
+          <block type="variables_set">
+            <field name="VAR" id="0YUPzRgqT){15R|;CA5[" variabletype="">tmp</field>
+            <value name="VALUE">
+              <shadow type="math_number">
+                <field name="NUM">0</field>
+              </shadow>
+              <block type="device_temperature"></block>
+            </value>
+            <next>
+              <block type="sigfox_sendToSigfox">
+                <value name="name">
+                  <shadow type="text">
+                    <field name="TEXT">tmp</field>
+                  </shadow>
+                </value>
+                <value name="value">
+                  <block type="variables_get">
+                    <field name="VAR" id="0YUPzRgqT){15R|;CA5[" variabletype="">tmp</field>
+                  </block>
+                </value>
+                <next>
+                  <block type="device_pause">
+                    <value name="pause">
+                      <shadow type="timePicker">
+                        <field name="ms">20000</field>
+                      </shadow>
+                    </value>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </statement>
+      </block>
+    </statement>
+  </block>
+  <block type="control_in_background" x="429" y="131">
+    <statement name="HANDLER">
+      <block type="device_while">
+        <value name="COND">
+          <shadow type="logic_boolean">
+            <field name="BOOL">TRUE</field>
+          </shadow>
+        </value>
+        <statement name="DO">
+          <block type="variables_set">
+            <field name="VAR" id=",,aJQk`.iJvzMlV/V$jq" variabletype="">cmp</field>
+            <value name="VALUE">
+              <shadow type="math_number">
+                <field name="NUM">0</field>
+              </shadow>
+              <block type="device_heading"></block>
+            </value>
+            <next>
+              <block type="sigfox_sendToSigfox">
+                <value name="name">
+                  <shadow type="text">
+                    <field name="TEXT">cmp</field>
+                  </shadow>
+                </value>
+                <value name="value">
+                  <block type="variables_get">
+                    <field name="VAR" id=",,aJQk`.iJvzMlV/V$jq" variabletype="">cmp</field>
+                  </block>
+                </value>
+                <next>
+                  <block type="device_pause">
+                    <value name="pause">
+                      <shadow type="timePicker">
+                        <field name="ms">20000</field>
+                      </shadow>
+                    </value>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </statement>
+      </block>
+    </statement>
+  </block>
+  <block type="control_in_background" x="210" y="415">
+    <statement name="HANDLER">
+      <block type="device_while">
+        <value name="COND">
+          <shadow type="logic_boolean">
+            <field name="BOOL">TRUE</field>
+          </shadow>
+        </value>
+        <statement name="DO">
+          <block type="variables_set">
+            <field name="VAR" id="Cvd~a4##[Hi~^v9xCO=N" variabletype="">lig</field>
+            <value name="VALUE">
+              <shadow type="math_number">
+                <field name="NUM">0</field>
+              </shadow>
+              <block type="device_get_light_level"></block>
+            </value>
+            <next>
+              <block type="sigfox_sendToSigfox">
+                <value name="name">
+                  <shadow type="text">
+                    <field name="TEXT">lig</field>
+                  </shadow>
+                </value>
+                <value name="value">
+                  <block type="variables_get">
+                    <field name="VAR" id="Cvd~a4##[Hi~^v9xCO=N" variabletype="">lig</field>
+                  </block>
+                </value>
+                <next>
+                  <block type="device_pause">
+                    <value name="pause">
+                      <shadow type="timePicker">
+                        <field name="ms">20000</field>
+                      </shadow>
+                    </value>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </statement>
+      </block>
+    </statement>
+  </block>
 </xml>

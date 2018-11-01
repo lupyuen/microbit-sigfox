@@ -1,4 +1,3 @@
-//% color="purple" block="Sigfox"
 namespace sigfox {
     //  Don't use debug() in this module since it's called by platform.ts.
     //  From uart.h
