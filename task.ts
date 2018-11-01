@@ -78,15 +78,6 @@ namespace sigfox {
             event_id: event_id,
             signalled: 0
         }
-        /*
-        control.onEvent(
-            SIGFOX_SOURCE.SIGFOX_EVENT,
-            event_id,
-            function () {
-                event
-            }
-        )
-        */
         return event;
     }
     export function event_reset(event: Evt_t): void {
@@ -96,7 +87,7 @@ namespace sigfox {
         event.signalled++
     }
     export function event_wait_multiple(mode: number, event1: Evt_t, event2: Evt_t): void {
-        //  TODO: Use blocking wait instead of polling.
+        //  TODO: Use blocking wait instead of polling every second.  For now this is OK, because sending via UART to the Wisol module is quite slow.
         for (; ;) {
             if (event1 && event1.signalled > 0) { break; }
             if (event2 && event2.signalled > 0) { break; }

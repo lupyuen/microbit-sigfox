@@ -9,6 +9,7 @@ namespace sigfox {
     // = 20 seconds.
     export const SEND_INTERVAL: number = 20 * 1000
 
+    let sendSensors: string[] = [];  //  Sensors to be sent.
     let sensorData: SensorMsg[] = []
     let payload: string = null
 
@@ -63,7 +64,6 @@ namespace sigfox {
         debug(msg.name, "3"); ////
 
         //  Encode the sensor data into a Sigfox message, 4 digits each.
-        const sendSensors = ["tmp", "hmd", "alt"];  //  Sensors to be sent.
         sendSensors.forEach((sensorName: string) => {
             //  Get each sensor data and add to the message payload.
             let data = 0.0;
@@ -151,8 +151,9 @@ namespace sigfox {
         return sensorData[emptyIndex];
     }
     //% block
-    export function setup_aggregate() {
+    export function setup_aggregate(sendSensors0: string[]): void {
         // Init the list of aggregated sensor data.
+        sendSensors = sendSensors0
         sensorData = []
         for (let i = 0; i < MAX_SENSOR_COUNT; i++) {
             let sensor: SensorMsg = {

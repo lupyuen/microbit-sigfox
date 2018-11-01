@@ -5,7 +5,8 @@ let sensorMsg: sigfox.Msg_t = null
 beginMsg = sigfox.createSensorMsg(sigfox.BEGIN_SENSOR_NAME, 0)
 sensorMsg = sigfox.createSensorMsg("tmp", 23.4)
 // Erase the aggregated sensor data.
-sigfox.setup_aggregate()
+const sendSensors = ["tmp", "hmd", "alt"];  //  Sensors to be sent.
+sigfox.setup_aggregate(sendSensors)
 network_task_id = sigfox.network_setup()
 sigfox.msg_post(network_task_id, beginMsg)
 basic.pause(20 * 1000)
