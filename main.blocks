@@ -7,6 +7,7 @@
   <block type="pxt-on-start" x="0" y="0">
     <statement name="HANDLER">
       <block type="sigfox_setupSigfox">
+        <field name="country">sigfox.Country.COUNTRY_SG</field>
         <value name="sendSensors">
           <block type="lists_create_with">
             <mutation items="3"></mutation>
@@ -30,7 +31,7 @@
       </block>
     </statement>
   </block>
-  <block type="device_forever" x="613" y="2"></block>
+  <block type="device_forever" x="764" y="1"></block>
   <block type="control_in_background" x="4" y="140">
     <statement name="HANDLER">
       <block type="device_while">
