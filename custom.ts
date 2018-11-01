@@ -1,6 +1,31 @@
 namespace sigfox {
     //% block
-    export function network_setup(): uint8 {
+    export let network_task_id = 0
+
+    //% block
+    export function setup(sendSensors: string[]): void {
+        //  TODO: Validate sendSensors.
+        //  Disable the LED because it may interfere with other sensors.
+        led.enable(false)
+        const msg = createSensorMsg(sigfox.BEGIN_SENSOR_NAME, 0)
+        //  Erase the aggregated sensor data.
+        setup_aggregate(sendSensors)
+        //  Start the Network Task to send and receive network messages.
+        network_task_id = network_setup()
+        //  Initialise the Wisol module.
+        msg_post(network_task_id, msg)
+        //  Wait for Wisol module to be initialised.
+        basic.pause(10 * 1000)
+    }
+
+    //% block
+    export function process_sensor_data(name: string, value: number): void {
+        const msg = sigfox.createSensorMsg(name, value)
+        sigfox.msg_post(network_task_id, msg)
+    }
+
+    //% block
+    export function network_setup(): number {
         // Start the Network Task to send and receive network
         // messages. Also starts the UART Task called by the
         // Network Task to send/receive data to the UART port.
