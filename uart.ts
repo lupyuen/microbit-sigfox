@@ -61,24 +61,29 @@ namespace sigfox {
             //  If this is a Wisol message, send to the Wisol module.
             const marker = String.fromCharCode(ctx().msg.markerChar);
             ctx().response = "";
-            serial.writeLine(">> " + ctx().msg.sendData);
-            serial.redirect(SerialPin.P0, SerialPin.P1, 9600);
+            ////serial.writeLine(">> " + ctx().msg.sendData);
+            serial.writeLine(">> " + "[" + ctx().msg.markerChar + " / " +
+                ctx().msg.expectedMarkerCount + "] " +
+                ctx().msg.sendData);
 
-            //  Must pause 2 seconds before writing to serial port or it gets garbled.
-            basic.pause(2000);
+            basic.pause(2000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
+            serial.redirect(SerialPin.P0, SerialPin.P1, 9600);
+            basic.pause(2000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
+
             serial.writeString(ctx().msg.sendData);
 
-            ////ctx().response = "OK"; ////
+            ////ctx().response = "OK";
             for (let i = 0; i < ctx().msg.expectedMarkerCount; i++) {
-                const line = serial.readUntil(marker)
-                ctx().response = ctx().response + marker;
+                ////const line = "OK";
+                const line = serial.readUntil(marker);
+                ctx().response = ctx().response + line + marker;
             }
             ctx().status = true; ////TODO
 
+            basic.pause(2000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
             serial.redirectToUSB();
+            basic.pause(2000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
 
-            //  Must pause 2 seconds before writing to serial port or it gets garbled.
-            basic.pause(2000);
             serial.writeLine("<< " + ctx().response);
 
             if (ctx().msg.responseMsg) {

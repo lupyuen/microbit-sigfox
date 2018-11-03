@@ -3,7 +3,7 @@ let cmp = 0
 let tmp = 0
 sigfox.setupSigfox(sigfox.Country.COUNTRY_SG, ["tmp", "lig", "cmp"])
 basic.forever(function () {
-	
+
 })
 control.inBackground(function () {
     while (true) {

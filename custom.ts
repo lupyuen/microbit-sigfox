@@ -8,8 +8,16 @@ namespace sigfox {
         sendSensors: string[]
     ): void {
         //  TODO: Validate sendSensors.
+        //  TODO: Simulator mode
+
         //  Disable the LED because it may interfere with other sensors.
         led.enable(false)
+
+        //  Set serial port to USB for console output.
+        basic.pause(2000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
+        serial.redirectToUSB()
+        basic.pause(2000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
+
         const msg = createSensorMsg(sigfox.BEGIN_SENSOR_NAME, 0)
         //  Erase the aggregated sensor data.
         setup_aggregate(sendSensors)
