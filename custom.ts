@@ -32,8 +32,8 @@ namespace sigfox {
             ////debug_println("setupSigfox 2")  ////
         })
 
-        //  Wait 10 seconds for Wisol module to be initialised.
-        basic.pause(10 * 1000)
+        //  Wait 7 seconds for Wisol module to be initialised.
+        basic.pause(7 * 1000)
         ////debug_println("setupSigfox: Done")  ////
     }
 
@@ -43,7 +43,7 @@ namespace sigfox {
         value: number
     ): void {
         //  Plot the sensor value on the console graph.
-        debug_println("   " + name + ":" + value)
+        debug_println("   " + name + ": " + value)
         const msg = createSensorMsg(name, value)
         msg_post(network_task_id, msg)
     }

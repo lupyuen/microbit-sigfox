@@ -76,12 +76,12 @@ namespace sigfox {
             serial.redirect(SerialPin.P0, SerialPin.P1, 9600);
 
             //  First transmission is always corrupted. We send a dummy command as first transmission.
-            basic.pause(1 * 1000);  //  Must pause 1 second before writing to serial port or it gets garbled.
+            basic.pause(0.5 * 1000);  //  Must pause 0.5 seconds before writing to serial port or it gets garbled.
             serial.writeString("AT\r");
             serial.readUntil(marker);  //  Ignore the response.
 
             //  Send the actual command to Wisol module.
-            basic.pause(1 * 1000);  //  Must pause 1 second before writing to serial port or it gets garbled.
+            basic.pause(0.5 * 1000);  //  Must pause 0.5 seconds before writing to serial port or it gets garbled.
             serial.writeString(ctx().msg.sendData);
 
             //  Receive data until the expected number of markers have been seen.
