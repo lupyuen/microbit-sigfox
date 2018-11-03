@@ -6,6 +6,7 @@ sigfox.setupSigfox(sigfox.Country.COUNTRY_SG, ["tmp", "lig", "cmp"])
 basic.forever(function () {
 
 })
+
 basic.pause(10 * 1000)
 control.inBackground(function () {
     while (true) {
@@ -24,6 +25,7 @@ control.inBackground(function () {
         basic.pause(20000)
     }
 })
+*/
 
 basic.pause(10 * 1000)
 control.inBackground(function () {
@@ -33,4 +35,3 @@ control.inBackground(function () {
         basic.pause(20000)
     }
 })
-*/
