@@ -23,7 +23,7 @@ namespace sigfox {
         //  Start the Network Task to send and receive network messages.
         network_task_id = network_setup(country)
         basic.pause(10 * 1000)
-        debug("setupSigfox")  ////
+        debug_println("setupSigfox")  ////
 
         //  Initialise the Wisol module.
         const msg = createSensorMsg(sigfox.BEGIN_SENSOR_NAME, 0)
@@ -32,7 +32,7 @@ namespace sigfox {
         //  Wait a while for Wisol module to be initialised.
         basic.pause(10 * 1000)
 
-        debug("setupSigfox: Done")  ////
+        debug_println("setupSigfox: Done")  ////
     }
 
     //% block
@@ -40,10 +40,10 @@ namespace sigfox {
         name: string,
         value: number
     ): void {
-        debug("sendToSigfox: ", name)  ////
+        debug_println("sendToSigfox: ", name)  ////
         const msg = createSensorMsg(name, value)
         msg_post(network_task_id, msg)
-        debug("sendToSigfox: Done ", name)  ////
+        debug_println("sendToSigfox: Done ", name)  ////
     }
 
     //% block

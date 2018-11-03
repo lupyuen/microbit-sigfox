@@ -43,6 +43,8 @@ namespace sigfox {
         }
         const os_get_running_tid = () => task_id;
         const ctx = () => task_context.uartContext;
+
+        ////serial.writeLine("uart_task: open"); ////
         task_open();  //  Start of the task. Must be matched with task_close().  
         for (; ;) {  //  Receive the next UART message.
             let msg_t = msg_receive(os_get_running_tid());
@@ -113,5 +115,6 @@ namespace sigfox {
 
         }  //  Loop to next incoming UART message.
         task_close();  //  End of the task.
+        ////serial.writeLine("uart_task: close"); ////
     }
 }
