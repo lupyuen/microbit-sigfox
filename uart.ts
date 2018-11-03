@@ -64,15 +64,21 @@ namespace sigfox {
             serial.writeLine(">> " + ctx().msg.sendData);
             serial.redirect(SerialPin.P0, SerialPin.P1, 9600);
 
+            //  Must pause 2 seconds before writing to serial port or it gets garbled.
+            basic.pause(2000);
             serial.writeString(ctx().msg.sendData);
-            ctx().response = "OK"; ////
+
+            ////ctx().response = "OK"; ////
             for (let i = 0; i < ctx().msg.expectedMarkerCount; i++) {
-                ////const line = serial.readUntil(marker)
-                ////ctx().response = ctx().response + marker;
+                const line = serial.readUntil(marker)
+                ctx().response = ctx().response + marker;
             }
-            ctx().status = true; ////
+            ctx().status = true; ////TODO
 
             serial.redirectToUSB();
+
+            //  Must pause 2 seconds before writing to serial port or it gets garbled.
+            basic.pause(2000);
             serial.writeLine("<< " + ctx().response);
 
             if (ctx().msg.responseMsg) {
