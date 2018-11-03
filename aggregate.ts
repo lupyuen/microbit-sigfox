@@ -2,9 +2,10 @@ namespace sigfox {
     // From aggregate.h
 
     // Uncomment to disable downlink.
-    // const ENABLE_DOWNLINK = false
+    const ENABLE_DOWNLINK = false
     // Uncomment to enable downlink.
-    const ENABLE_DOWNLINK = true
+    // const ENABLE_DOWNLINK = true
+
     // Send a message to network every 20,000 milliseconds
     // = 20 seconds.
     export const SEND_INTERVAL: number = 20 * 1000
@@ -17,6 +18,7 @@ namespace sigfox {
     // sent, in hex digits, plus terminating null.
     const PAYLOAD_SIZE: number = 1 + MAX_MESSAGE_SIZE * 2
     // const testPayload = "0102030405060708090a0b0c";
+
     export function aggregate_sensor_data(
         context: NetworkContext,  //  Context storage for the Network Task.
         msg: SensorMsg,           //  Sensor Data Message just received. Contains sensor name and sensor values.
@@ -91,6 +93,7 @@ namespace sigfox {
         context.stepSendFunc(context, sendArgs);
         return true;  //  Will be sent by the caller.
     }
+
     function addPayloadInt(
         payloadBuffer: string,
         payloadSize: number,
@@ -118,6 +121,7 @@ namespace sigfox {
         }
         return payloadBuffer;
     }
+
     function copySensorData(dest: SensorMsg, src: SensorMsg): void {
         //  Copy sensor data from src to dest.
         dest.data = [];
@@ -126,6 +130,7 @@ namespace sigfox {
         }
         dest.count = src.count;
     }
+
     function recallSensor(name: string): SensorMsg {
         //  Return the sensor data for the sensor name.  If not found, allocate
         //  a new SensorMsg and return it.  If no more space, return NULL.
@@ -150,6 +155,7 @@ namespace sigfox {
         sensorData[emptyIndex].data = [];  //  Reset to empty in case we need to send.
         return sensorData[emptyIndex];
     }
+
     //% block
     export function setup_aggregate(sendSensors0: string[]): void {
         // Init the list of aggregated sensor data.
