@@ -8,7 +8,7 @@ namespace sigfox {
     let uartTaskID = 0
     let debugBuffer: string[] = []
     const MAX_DEBUG_BUFFER_SIZE = 10
-    
+
     //  TODO
     export function led_toggle() { }
     export function millis(): int32 {
@@ -31,19 +31,36 @@ namespace sigfox {
 
     export function debug_print(p1: string, p2: string = null): void {
         const s = p1 + ((p2 === null) ? "" : p2);
+        internal_print(normalise_text(s));
+    }
+
+    export function debug_println(p1: string, p2: string = null): void {
+        const s = p1 + ((p2 === null) ? "" : p2);
+        internal_print(normalise_text(s) + "\n");
+    }
+
+    function internal_print(s: string): void {
         debugBuffer.push(s);
         if (debugBuffer.length >= MAX_DEBUG_BUFFER_SIZE) {
             debug_flush();
         }
     }
 
-    export function debug_println(p1: string, p2: string = null): void {
-        const s = p1 + ((p2 === null) ? "" : p2);
-        debug_print(s + "\n");
-    }
-
     export function set_uart_task_id(task_id: number): void {
         uartTaskID = task_id;
+    }
+
+    function normalise_text(s: string): string {
+        let result = "";
+        for (let i = 0; i < s.length; i++) {
+            const ch = s.charCodeAt(i);
+            if (ch < 32) {
+                result = result + "[" + ch + "]";
+            } else {
+                result = result + s[i];
+            }
+        }
+        return result;
     }
 
     function uart_write(s: string): void {
