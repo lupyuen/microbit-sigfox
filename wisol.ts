@@ -175,7 +175,7 @@ namespace sigfox {
 
     function processPendingResponse(context: NetworkContext): void {
         //  If there is a pending response, e.g. from send payload...
-        debug(F("net >> Pending response"));
+        debug(F("net >> Process pending response"));
         if (!context.pendingResponse) {
             debug(F("***** Error: No pending response"));
             return;

@@ -1,5 +1,5 @@
 namespace sigfox {
-    // From aggregate.h
+    // From aggregate.h: Aggregate sensor data and decide whether to send to network now.
 
     // Uncomment to disable downlink.
     const ENABLE_DOWNLINK = false
@@ -10,7 +10,8 @@ namespace sigfox {
     // = 20 seconds.
     export const SEND_INTERVAL: number = 20 * 1000
 
-    let sendSensors: string[] = [];  //  Sensors to be sent.
+    let sequenceNumber = 0  //  Message sequence number
+    let sendSensors: string[] = []  //  Sensors to be sent.
     let sensorData: SensorMsg[] = []
     let payload: string = null
 
@@ -63,7 +64,6 @@ namespace sigfox {
 
         //  Create a new Sigfox message. Add a running sequence number to the message.
         payload = "";  //  Empty the message payload.
-        let sequenceNumber = 0;
         payload = addPayloadInt(payload, PAYLOAD_SIZE, "seq", sequenceNumber++, 4);
 
         //  Encode the sensor data into a Sigfox message, 4 digits each.
