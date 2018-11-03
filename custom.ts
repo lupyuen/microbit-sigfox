@@ -31,8 +31,8 @@ namespace sigfox {
             ////debug_println("setupSigfox 2")  ////
         })
 
-        //  Wait a while for Wisol module to be initialised.
-        basic.pause(5 * 1000)
+        //  Wait 10 seconds for Wisol module to be initialised.
+        basic.pause(10 * 1000)
         ////debug_println("setupSigfox: Done")  ////
     }
 
