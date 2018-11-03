@@ -67,6 +67,7 @@ namespace sigfox {
             //  If this is a Wisol message, send to the Wisol module.
             const marker = String.fromCharCode(ctx().msg.markerChar);
             ctx().response = "";
+            ctx().status = true;
 
             //  Display on debug console the Wisol command to be sent.
             serial.writeLine(">> " + ctx().msg.sendData);
@@ -94,8 +95,12 @@ namespace sigfox {
                 //  Delimit the lines by the marker.
                 if (ctx().response.length > 0) { ctx().response = ctx().response + marker; }
                 ctx().response = ctx().response + line;
+                //  In case of error, stop.
+                if (ctx().response.indexOf("error") >= 0) {
+                    ctx().status = false;
+                    break;
+                }
             }
-            ctx().status = true; ////TODO
 
             //  Switch back to USB to write to debug console.
             serial.redirectToUSB();

@@ -78,7 +78,7 @@ namespace sigfox {
         let cmd: NetworkCmd;
         let shouldSend: boolean;
 
-        debug("network_task open"); ////
+        ////debug("network_task open"); ////
         task_open();  //  Start of the task. Must be matched with task_close().  
         if (!successEvent) { successEvent = event_create(); }  //  Create event for UART Task to indicate success.
         if (!failureEvent) { failureEvent = event_create(); }  //  Another event to indicate failure.
@@ -170,7 +170,7 @@ namespace sigfox {
             sem_signal(sendSemaphore);
         }  //  Loop to next incoming sensor data message.
         task_close();  //  End of the task.
-        debug("network_task close"); ////
+        ////debug("network_task close"); ////
     }
 
     function processPendingResponse(context: NetworkContext): void {
