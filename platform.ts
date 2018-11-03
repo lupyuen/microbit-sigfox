@@ -50,7 +50,7 @@ namespace sigfox {
         uartTaskID = task_id;
     }
 
-    function normalise_text(s: string): string {
+    export function normalise_text(s: string): string {
         let result = "";
         for (let i = 0; i < s.length; i++) {
             const ch = s.charCodeAt(i);

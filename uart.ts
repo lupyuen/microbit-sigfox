@@ -15,6 +15,7 @@ namespace sigfox {
         responseTaskID: uint8;  //  Send to this task ID.
         debugMsg: boolean;  //  True if this is a message to be shown on debug console.
     }
+
     // UART Task maintains this context in the task data.
     export interface UARTContext {
         status: boolean;  //  Return status.  True if successfully sent.
@@ -25,8 +26,10 @@ namespace sigfox {
         testTimer: number;  //  For testing timer.
         msg: UARTMsg;  //  Message being sent. Set by uart_task() upon receiving a message.
     }
+
     // From uart.cpp
     let uartContext: UARTContext = null;
+
     export function setup_uart(
         context: UARTContext,  //  Will be used to store the context of the UART Task.
         response: string): void {      //  Buffer that will be used to store the UART response.
@@ -34,6 +37,7 @@ namespace sigfox {
         context.response = response;
         uartContext = context;
     }
+
     //% block
     export function uart_task(task_id: number, task_context: Context_t): void {
         //  Simplified UART Task.
@@ -97,6 +101,8 @@ namespace sigfox {
 
             //  Switch back to USB to write to debug console.
             serial.redirectToUSB();
+            //  Display the received response.  Encode any special characters.
+            serial.writeLine("<< " + normalise_text(ctx().response));
 
             if (ctx().msg.responseMsg) {
                 //  If caller has requested for response message, then send it instead of event.

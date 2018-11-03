@@ -53,17 +53,15 @@ namespace sigfox {
         let now = millis();
         if ((context.lastSend + SEND_INTERVAL) > now) {
             //  Not ready to send.
-            debug(msg.name, " || throttled"); ////
+            ////debug(msg.name, " || throttled"); ////
             return false;
         }
         context.lastSend = now + MAX_TIMEOUT;  //  Prevent other requests from trying to send.
-        debug(msg.name, "2"); ////
 
         //  Create a new Sigfox message. Add a running sequence number to the message.
         payload = "";  //  Empty the message payload.
         let sequenceNumber = 0;
         payload = addPayloadInt(payload, PAYLOAD_SIZE, "seq", sequenceNumber++, 4);
-        debug(msg.name, "3"); ////
 
         //  Encode the sensor data into a Sigfox message, 4 digits each.
         sendSensors.forEach((sensorName: string) => {
@@ -73,8 +71,7 @@ namespace sigfox {
             if (savedSensor && savedSensor.count > 0) { data = savedSensor.data[0]; }  //  Fetch the sensor data (first float only).
             const scaledData = data * 10.0;  //  Scale up by 10 to send 1 decimal place. So 27.1 becomes 271
             payload = addPayloadInt(payload, PAYLOAD_SIZE, sensorName, scaledData, 4);  //  Add to payload.        
-        })
-        debug(msg.name, "4"); ////
+        });
 
         //  If the payload has odd number of digits, pad with '0'.
         const length = payload.length;

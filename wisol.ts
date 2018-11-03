@@ -192,7 +192,6 @@ namespace sigfox {
         const response: string = (context && context.uartContext)
             ? context.uartContext.response
             : "";
-        debug_println("<< " + response);
 
         //  Process the response text, regardless of success/failure.
         //  Call the process response function if has been set.
