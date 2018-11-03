@@ -15,19 +15,22 @@ namespace sigfox {
 
         //  Set serial port to USB for console output.
         serial.redirectToUSB()
+        basic.pause(10 * 1000)
 
         //  Erase the aggregated sensor data.
         setup_aggregate(sendSensors)
 
         //  Start the Network Task to send and receive network messages.
         network_task_id = network_setup(country)
+        basic.pause(10 * 1000)
+        debug("setupSigfox")  ////
 
         //  Initialise the Wisol module.
         const msg = createSensorMsg(sigfox.BEGIN_SENSOR_NAME, 0)
         msg_post(network_task_id, msg)
 
         //  Wait a while for Wisol module to be initialised.
-        basic.pause(20 * 1000)
+        basic.pause(10 * 1000)
 
         debug("setupSigfox: Done")  ////
     }

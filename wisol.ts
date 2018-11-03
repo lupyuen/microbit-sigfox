@@ -74,6 +74,7 @@ namespace sigfox {
         let cmd: NetworkCmd;
         let shouldSend: boolean;
 
+        debug("network_task open"); ////
         task_open();  //  Start of the task. Must be matched with task_close().  
         if (!successEvent) { successEvent = event_create(); }  //  Create event for UART Task to indicate success.
         if (!failureEvent) { failureEvent = event_create(); }  //  Another event to indicate failure.
@@ -164,7 +165,9 @@ namespace sigfox {
             sem_signal(sendSemaphore);
         }  //  Loop to next incoming sensor data message.
         task_close();  //  End of the task.
+        debug("network_task close"); ////
     }
+
     function processPendingResponse(context: NetworkContext): void {
         //  If there is a pending response, e.g. from send payload...
         debug(F("net >> Pending response"));
@@ -180,6 +183,7 @@ namespace sigfox {
             process_downlink_msg(context, context.status, context.downlinkData);
         }
     }
+
     function processResponse(context: NetworkContext): void {
         //  Process the response from the Wisol AT Command by calling the
         //  process response function.  Set the status to false if the processing failed.
@@ -208,6 +212,7 @@ namespace sigfox {
             return;  //  Quit processing.
         }
     }
+
     // /////////////////////////////////////////////////////////////////////////////
     // Define the Wisol AT Commands based on
     // WISOLUserManual_EVBSFM10RxAT_Rev.9_180115.pdf
@@ -221,6 +226,7 @@ namespace sigfox {
     const CMD_GET_PAC = "AT$I=11"
     const CMD_EMULATOR_DISABLE = "ATS410=0"
     const CMD_EMULATOR_ENABLE = "ATS410=1"
+
     // /////////////////////////////////////////////////////////////////////////////
     // Wisol Command Steps: A Command Step contains a list
     // of Wisol AT Commands to be sent for executing the
@@ -261,6 +267,7 @@ namespace sigfox {
             payload: null, sendData2: null
         });
     }
+
     function getStepSend(
         context: NetworkContext,
         args: StepArgs): void {
@@ -293,6 +300,7 @@ namespace sigfox {
             sendData2: sendData2
         });
     }
+
     function getStepPowerChannel(context: NetworkContext, list: Array<NetworkCmd>, listSize: number): void {
         //  Return the Wisol AT commands to set the transceiver output power and channel for the zone.
         //  See WISOLUserManual_EVBSFM10RxAT_Rev.9_180115.pdf, http://kochingchang.blogspot.com/2018/06/minisigfox.html  //  debug(F(" - wisol.getStepPowerChannel"));
@@ -333,6 +341,7 @@ namespace sigfox {
             }
         }
     }
+
     // /////////////////////////////////////////////////////////////////////////////
     // Wisol Response Processing Functions: Called to
     // process response when response is received from
@@ -343,6 +352,7 @@ namespace sigfox {
         debug(F(" - wisol.getID: "), context.device);
         return true;
     }
+
     function getPAC(context: NetworkContext, response: string): boolean {
         //  Save the PAC code to context.  Note that the PAC is only valid
         //  for the first registration in the Sigfox portal.  After
@@ -353,6 +363,7 @@ namespace sigfox {
         debug(F(" - wisol.getPAC: "), context.pac);
         return true;
     }
+
     function checkChannel(context: NetworkContext, response: string): boolean {
         //  Parse the CMD_GET_CHANNEL response "X,Y" to determine if we need to send the CMD_RESET_CHANNEL command.
         //  If not needed, change the next command to CMD_NONE.
@@ -388,6 +399,7 @@ namespace sigfox {
         }
         return true;  //  Success
     }
+
     // Downlink Server Support:
     // https://backend.sigfox.com/apidocs/callback When a
     // message needs to be acknowledged, the callback
@@ -509,6 +521,7 @@ namespace sigfox {
         uartMsg.failureEvent = failureEvent0;
         uartMsg.sendData = uartData;
     }
+
     export function setup_wisol(
         context: NetworkContext,
         uartContext: UARTContext,
@@ -559,6 +572,7 @@ namespace sigfox {
             responseTaskID: 0,
         };
     }
+
     function addCmd(list: Array<NetworkCmd>, listSize: number, cmd: NetworkCmd): void {
         //  Append the UART message to the command list.
         //  Stop if we have overflowed the list.
@@ -566,6 +580,7 @@ namespace sigfox {
         list[m++] = cmd;
         list[m++] = endOfList;
     }
+
     function getCmdIndex(list: Array<NetworkCmd>, listSize: number): number {
         //  Given a list of commands, return the index of the next empty element.
         //  Check index against cmd size.  It must fit 2 more elements:
