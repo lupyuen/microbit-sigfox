@@ -61,15 +61,22 @@ namespace sigfox {
             //  If this is a Wisol message, send to the Wisol module.
             const marker = String.fromCharCode(ctx().msg.markerChar);
             ctx().response = "";
+
+            //  TODO: Call debug_flush() before sending data.
             ////serial.writeLine(">> " + ctx().msg.sendData);
             serial.writeLine(">> " + "[" + ctx().msg.markerChar + " / " +
                 ctx().msg.expectedMarkerCount + "] " +
                 ctx().msg.sendData);
 
-            basic.pause(2000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
+            basic.pause(5 * 1000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
             serial.redirect(SerialPin.P0, SerialPin.P1, 9600);
-            basic.pause(2000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
+            basic.pause(5 * 1000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
 
+            //  First transmission is always corrupted. We send a dummy command as first transmission.
+            serial.writeString("AT\r");
+            serial.readUntil(marker);  //  Ignore the response.
+
+            //  Send the actual command.
             serial.writeString(ctx().msg.sendData);
 
             ////ctx().response = "OK";
@@ -80,9 +87,9 @@ namespace sigfox {
             }
             ctx().status = true; ////TODO
 
-            basic.pause(2000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
+            basic.pause(5 * 1000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
             serial.redirectToUSB();
-            basic.pause(2000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
+            basic.pause(5 * 1000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
 
             serial.writeLine("<< " + ctx().response);
 
