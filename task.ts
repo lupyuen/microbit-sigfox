@@ -13,7 +13,7 @@ namespace sigfox {
         networkContext?: NetworkContext
         uartContext?: UARTContext
     }
-    export interface Evt_t { 
+    export interface Evt_t {
         event_id: number
         signalled: number
     }
@@ -23,7 +23,8 @@ namespace sigfox {
     let next_task_id = 1
     let next_event_id = 1
 
-    export function msg_post(task_id: number, msg: Msg_t): void {
+    export function msg_post(task_id0: number, msg: Msg_t): void {
+        let task_id = task_id0
         if (task_id === 0 || !msg_queues[task_id]) {
             serial.writeLine("***** ERROR: msg_post / missing task ID")
             return
@@ -33,11 +34,12 @@ namespace sigfox {
             return
         }
         msg_queues[task_id].push(msg)
+
         //  Signal to the receiving task that a message is available.
         control.raiseEvent(
             SIGFOX_SOURCE.SIGFOX_MESSAGE,
             task_id
-        )    
+        )
     }
 
     export function msg_receive(task_id: number): Msg_t {
@@ -47,7 +49,7 @@ namespace sigfox {
             return null
         }
         return msg_queues[task_id].shift()
-    }    
+    }
 
     export function task_create(
         task_func: (task_id0: number, task_context0: Context_t) => void,

@@ -6,7 +6,7 @@ sigfox.setupSigfox(sigfox.Country.COUNTRY_SG, ["tmp", "lig", "cmp"])
 basic.forever(function () {
 
 })
-
+basic.pause(10 * 1000)
 control.inBackground(function () {
     while (true) {
         tmp = input.temperature()
@@ -15,6 +15,8 @@ control.inBackground(function () {
     }
 })
 
+/*
+basic.pause(10 * 1000)
 control.inBackground(function () {
     while (true) {
         cmp = input.compassHeading()
@@ -23,6 +25,7 @@ control.inBackground(function () {
     }
 })
 
+basic.pause(10 * 1000)
 control.inBackground(function () {
     while (true) {
         lig = input.lightLevel()
@@ -30,3 +33,4 @@ control.inBackground(function () {
         basic.pause(20000)
     }
 })
+*/
