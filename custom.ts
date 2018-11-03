@@ -14,19 +14,20 @@ namespace sigfox {
         led.enable(false)
 
         //  Set serial port to USB for console output.
-        basic.pause(2000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
         serial.redirectToUSB()
-        basic.pause(2000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
 
-        const msg = createSensorMsg(sigfox.BEGIN_SENSOR_NAME, 0)
         //  Erase the aggregated sensor data.
         setup_aggregate(sendSensors)
+
         //  Start the Network Task to send and receive network messages.
         network_task_id = network_setup(country)
+
         //  Initialise the Wisol module.
+        const msg = createSensorMsg(sigfox.BEGIN_SENSOR_NAME, 0)
         msg_post(network_task_id, msg)
-        //  Wait for Wisol module to be initialised.
-        basic.pause(10 * 1000)
+
+        //  Wait 5 seconds for Wisol module to be initialised.
+        basic.pause(5 * 1000)
     }
 
     //% block
