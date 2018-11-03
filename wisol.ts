@@ -353,7 +353,7 @@ namespace sigfox {
     function getID(context: NetworkContext, response: string): boolean {
         //  Save the device ID to context.
         context.device = response;
-        debug(F(" - wisol.getID: "), context.device);
+        debug(F("<< wisol.getID "), context.device);
         return true;
     }
 
@@ -364,7 +364,7 @@ namespace sigfox {
         //  but not in the Wisol AT Command.  You must get the updated
         //  PAC from the Sigfox portal if you wish to transfer the device.
         context.pac = response;
-        debug(F(" - wisol.getPAC: "), context.pac);
+        debug(F("<< wisol.getPAC "), context.pac);
         return true;
     }
 
