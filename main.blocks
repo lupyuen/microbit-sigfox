@@ -1,38 +1,19 @@
 <xml xmlns="http://www.w3.org/1999/xhtml">
   <variables>
-    <variable type="" id="0YUPzRgqT){15R|;CA5[">tmp</variable>
-    <variable type="" id=",,aJQk`.iJvzMlV/V$jq">cmp</variable>
-    <variable type="" id="Cvd~a4##[Hi~^v9xCO=N">lig</variable>
+    <variable type="" id="WrcNdx_n;OR$gK4FM`x@">tmp</variable>
+    <variable type="" id="9vh!N}f9GgZVuCBpn};}">lig</variable>
+    <variable type="" id="Mi+zV-CMnny3P=)$O_~?">acl</variable>
   </variables>
-  <block type="pxt-on-start" x="0" y="0">
+  <block type="pxt-on-start" x="6" y="9">
     <statement name="HANDLER">
-      <block type="sigfox_setupSigfox">
-        <field name="country">sigfox.Country.COUNTRY_SG</field>
-        <value name="sendSensors">
-          <block type="lists_create_with">
-            <mutation items="3"></mutation>
-            <value name="ADD0">
-              <shadow type="text">
-                <field name="TEXT">tmp</field>
-              </shadow>
-            </value>
-            <value name="ADD1">
-              <shadow type="text">
-                <field name="TEXT">lig</field>
-              </shadow>
-            </value>
-            <value name="ADD2">
-              <shadow type="text">
-                <field name="TEXT">cmp</field>
-              </shadow>
-            </value>
-          </block>
-        </value>
+      <block type="typescript_statement" editable="false">
+        <mutation line0="sigfox.setupSigfox(sigfox.Country.COUNTRY_SG, [&quot;tmp&quot;, &quot;lig&quot;, &quot;acl&quot;])" numlines="1"></mutation>
+        <field name="LINE0">sigfox.setupSigfox(sigfox.Country.COUNTRY_SG, ["tmp", "lig", "acl"])</field>
       </block>
     </statement>
   </block>
-  <block type="device_forever" x="764" y="1"></block>
-  <block type="control_in_background" x="4" y="140">
+  <block type="device_forever" x="760" y="0"></block>
+  <block type="control_in_background" x="0" y="139">
     <statement name="HANDLER">
       <block type="device_while">
         <value name="COND">
@@ -42,7 +23,7 @@
         </value>
         <statement name="DO">
           <block type="variables_set">
-            <field name="VAR" id="0YUPzRgqT){15R|;CA5[" variabletype="">tmp</field>
+            <field name="VAR" id="WrcNdx_n;OR$gK4FM`x@" variabletype="">tmp</field>
             <value name="VALUE">
               <shadow type="math_number">
                 <field name="NUM">0</field>
@@ -58,7 +39,7 @@
                 </value>
                 <value name="value">
                   <block type="variables_get">
-                    <field name="VAR" id="0YUPzRgqT){15R|;CA5[" variabletype="">tmp</field>
+                    <field name="VAR" id="WrcNdx_n;OR$gK4FM`x@" variabletype="">tmp</field>
                   </block>
                 </value>
                 <next>
@@ -77,7 +58,7 @@
       </block>
     </statement>
   </block>
-  <block type="control_in_background" x="429" y="131">
+  <block type="control_in_background" x="425" y="130">
     <statement name="HANDLER">
       <block type="device_while">
         <value name="COND">
@@ -87,52 +68,7 @@
         </value>
         <statement name="DO">
           <block type="variables_set">
-            <field name="VAR" id=",,aJQk`.iJvzMlV/V$jq" variabletype="">cmp</field>
-            <value name="VALUE">
-              <shadow type="math_number">
-                <field name="NUM">0</field>
-              </shadow>
-              <block type="device_heading"></block>
-            </value>
-            <next>
-              <block type="sigfox_sendToSigfox">
-                <value name="name">
-                  <shadow type="text">
-                    <field name="TEXT">cmp</field>
-                  </shadow>
-                </value>
-                <value name="value">
-                  <block type="variables_get">
-                    <field name="VAR" id=",,aJQk`.iJvzMlV/V$jq" variabletype="">cmp</field>
-                  </block>
-                </value>
-                <next>
-                  <block type="device_pause">
-                    <value name="pause">
-                      <shadow type="timePicker">
-                        <field name="ms">20000</field>
-                      </shadow>
-                    </value>
-                  </block>
-                </next>
-              </block>
-            </next>
-          </block>
-        </statement>
-      </block>
-    </statement>
-  </block>
-  <block type="control_in_background" x="210" y="415">
-    <statement name="HANDLER">
-      <block type="device_while">
-        <value name="COND">
-          <shadow type="logic_boolean">
-            <field name="BOOL">TRUE</field>
-          </shadow>
-        </value>
-        <statement name="DO">
-          <block type="variables_set">
-            <field name="VAR" id="Cvd~a4##[Hi~^v9xCO=N" variabletype="">lig</field>
+            <field name="VAR" id="9vh!N}f9GgZVuCBpn};}" variabletype="">lig</field>
             <value name="VALUE">
               <shadow type="math_number">
                 <field name="NUM">0</field>
@@ -148,7 +84,54 @@
                 </value>
                 <value name="value">
                   <block type="variables_get">
-                    <field name="VAR" id="Cvd~a4##[Hi~^v9xCO=N" variabletype="">lig</field>
+                    <field name="VAR" id="9vh!N}f9GgZVuCBpn};}" variabletype="">lig</field>
+                  </block>
+                </value>
+                <next>
+                  <block type="device_pause">
+                    <value name="pause">
+                      <shadow type="timePicker">
+                        <field name="ms">20000</field>
+                      </shadow>
+                    </value>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </statement>
+      </block>
+    </statement>
+  </block>
+  <block type="control_in_background" x="206" y="414">
+    <statement name="HANDLER">
+      <block type="device_while">
+        <value name="COND">
+          <shadow type="logic_boolean">
+            <field name="BOOL">TRUE</field>
+          </shadow>
+        </value>
+        <statement name="DO">
+          <block type="variables_set">
+            <field name="VAR" id="Mi+zV-CMnny3P=)$O_~?" variabletype="">acl</field>
+            <value name="VALUE">
+              <shadow type="math_number">
+                <field name="NUM">0</field>
+              </shadow>
+              <block type="device_acceleration">
+                <field name="NAME">Dimension.Strength</field>
+              </block>
+            </value>
+            <next>
+              <block type="sigfox_sendToSigfox">
+                <value name="name">
+                  <shadow type="text">
+                    <field name="TEXT">acl</field>
+                  </shadow>
+                </value>
+                <value name="value">
+                  <block type="variables_get">
+                    <field name="VAR" id="Mi+zV-CMnny3P=)$O_~?" variabletype="">acl</field>
                   </block>
                 </value>
                 <next>

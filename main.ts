@@ -1,12 +1,10 @@
-let tmp = 0
-let lig = 0
 let acl = 0
+let lig = 0
+let tmp = 0
 sigfox.setupSigfox(sigfox.Country.COUNTRY_SG, ["tmp", "lig", "acl"])
-
 basic.forever(function () {
-
+	
 })
-
 control.inBackground(function () {
     while (true) {
         tmp = input.temperature()
@@ -14,7 +12,6 @@ control.inBackground(function () {
         basic.pause(20000)
     }
 })
-
 control.inBackground(function () {
     while (true) {
         lig = input.lightLevel()
@@ -22,7 +19,6 @@ control.inBackground(function () {
         basic.pause(20000)
     }
 })
-
 control.inBackground(function () {
     while (true) {
         acl = input.acceleration(Dimension.Strength)
@@ -30,4 +26,3 @@ control.inBackground(function () {
         basic.pause(20000)
     }
 })
-

@@ -112,13 +112,15 @@ namespace sigfox {
             debug_print(F(" digits of ")); debug_print(name); debug_print(F(" value ")); debug_print(data + "");
             debug_println(" will be sent"); // debug_flush();
         }
+        let digits = "";
         for (let o = numDigits - 1; o >= 0; o--) {  //  Add the digits in reverse order (right to left).
             const d = data % 10;  //  Take the last digit.
             data = data / 10;  //  Shift to the next digit.
-            //  payloadBuffer[length + i] = '0' + d;  //  Write the digit to payload: 1 becomes '1'.
-            payloadBuffer = payloadBuffer + String.fromCharCode(
-                '0'.charCodeAt(0) + d);  //  Write the digit to payload: 1 becomes '1'.
+            digits = String.fromCharCode(
+                '0'.charCodeAt(0) + d) +  //  Write the digit to payload: 1 becomes '1'.
+                digits;
         }
+        payloadBuffer = payloadBuffer + digits;
         return payloadBuffer;
     }
 
