@@ -68,11 +68,12 @@ namespace sigfox {
                 ctx().msg.expectedMarkerCount + "] " +
                 ctx().msg.sendData);
 
-            basic.pause(5 * 1000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
+            ////basic.pause(5 * 1000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
             serial.redirect(SerialPin.P0, SerialPin.P1, 9600);
-            basic.pause(5 * 1000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
+            ////basic.pause(5 * 1000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
 
             //  First transmission is always corrupted. We send a dummy command as first transmission.
+            basic.pause(0);  //  Must pause 0 seconds before writing to serial port or it gets garbled.
             serial.writeString("AT\r");
             serial.readUntil(marker);  //  Ignore the response.
 
@@ -87,9 +88,9 @@ namespace sigfox {
             }
             ctx().status = true; ////TODO
 
-            basic.pause(5 * 1000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
+            ////basic.pause(5 * 1000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
             serial.redirectToUSB();
-            basic.pause(5 * 1000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
+            ////basic.pause(5 * 1000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
 
             serial.writeLine("<< " + ctx().response);
 

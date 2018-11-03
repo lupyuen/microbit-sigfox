@@ -44,7 +44,7 @@ namespace sigfox {
         payload: string;
         enableDownlink: boolean;
     }
-    
+
     // From wisol.cpp
     export const END_OF_RESPONSE = '\r'.charCodeAt(0)
     export const CMD_END = "\r"
@@ -78,7 +78,7 @@ namespace sigfox {
         if (!successEvent) { successEvent = event_create(); }  //  Create event for UART Task to indicate success.
         if (!failureEvent) { failureEvent = event_create(); }  //  Another event to indicate failure.
 
-        for (;;) {  //  Receive the next sensor data message.
+        for (; ;) {  //  Receive the next sensor data message.
             let msg_t = msg_receive(os_get_running_tid());
             if (!msg_t) { break; }  //  If no message received, exit and try again later.
             let msg = msg_t.sensorMsg;
@@ -134,6 +134,9 @@ namespace sigfox {
                 //  Reset the event signals.
                 event_reset(successEvent);
                 event_reset(failureEvent);
+
+                //  Must flush the debug output before sending, because UART Task will write to serial debug output directly.
+                debug_flush();
 
                 //  Transmit the UART command to the UART port by sending to the UART Task.
                 uartMsg.debugMsg = false;
