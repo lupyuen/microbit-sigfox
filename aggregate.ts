@@ -44,6 +44,9 @@ namespace sigfox {
         else { debug_println("(empty)"); }
         //  debug_flush();
 
+        //  Plot the sensor value on the console graph.
+        if (msg.count > 0) { debug_println("   " + msg.name + ": " + msg.data[0]); }
+
         //  Aggregate the sensor data.  Here we just save the last value for each sensor.
         let savedSensor: SensorMsg = recallSensor(msg.name);
         if (!savedSensor) return false;  //  Return error.

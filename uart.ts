@@ -70,7 +70,7 @@ namespace sigfox {
             ctx().status = true;
 
             //  Display on debug console the Wisol command to be sent.
-            serial.writeLine(">> " + ctx().msg.sendData);
+            serial.writeLine(">> " + normalise_text(ctx().msg.sendData));
 
             //  Switch to TX=Pin P0, RX=Pin P1 to write to Wisol module.
             serial.redirect(SerialPin.P0, SerialPin.P1, 9600);

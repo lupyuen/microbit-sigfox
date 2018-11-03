@@ -42,8 +42,6 @@ namespace sigfox {
         name: string,
         value: number
     ): void {
-        //  Plot the sensor value on the console graph.
-        debug_println("   " + name + ": " + value)
         const msg = createSensorMsg(name, value)
         msg_post(network_task_id, msg)
     }
