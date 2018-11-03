@@ -26,8 +26,10 @@ namespace sigfox {
         const msg = createSensorMsg(sigfox.BEGIN_SENSOR_NAME, 0)
         msg_post(network_task_id, msg)
 
-        //  Wait 5 seconds for Wisol module to be initialised.
-        basic.pause(5 * 1000)
+        //  Wait a while for Wisol module to be initialised.
+        basic.pause(20 * 1000)
+
+        debug("setupSigfox: Done")  ////
     }
 
     //% block
@@ -35,8 +37,10 @@ namespace sigfox {
         name: string,
         value: number
     ): void {
-        const msg = sigfox.createSensorMsg(name, value)
-        sigfox.msg_post(network_task_id, msg)
+        debug("sendToSigfox: ", name)  ////
+        const msg = createSensorMsg(name, value)
+        msg_post(network_task_id, msg)
+        debug("sendToSigfox: Done ", name)  ////
     }
 
     //% block
