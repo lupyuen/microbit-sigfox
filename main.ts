@@ -7,7 +7,6 @@ basic.forever(function () {
 
 })
 
-basic.pause(10 * 1000)
 control.inBackground(function () {
     while (true) {
         tmp = input.temperature()
@@ -16,8 +15,15 @@ control.inBackground(function () {
     }
 })
 
+control.inBackground(function () {
+    while (true) {
+        lig = input.lightLevel()
+        sigfox.sendToSigfox("lig", lig)
+        basic.pause(20000)
+    }
+})
+
 /*
-basic.pause(10 * 1000)
 control.inBackground(function () {
     while (true) {
         cmp = input.compassHeading()
@@ -27,11 +33,3 @@ control.inBackground(function () {
 })
 */
 
-basic.pause(10 * 1000)
-control.inBackground(function () {
-    while (true) {
-        lig = input.lightLevel()
-        sigfox.sendToSigfox("lig", lig)
-        basic.pause(20000)
-    }
-})

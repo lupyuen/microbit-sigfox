@@ -19,12 +19,12 @@ namespace sigfox {
         //  Erase the aggregated sensor data.
         setup_aggregate(sendSensors)
 
-        //  Start the Network Task and initialise the Wisol module.  Must be done in background or the program will pause forever.
-        control.inBackground(function () {
-            //  Start the Network Task to send and receive network messages.
-            network_task_id = network_setup(country)
-            ////debug_println("setupSigfox")  ////
+        //  Start the Network Task to send and receive network messages.
+        network_task_id = network_setup(country)
+        ////debug_println("setupSigfox")  ////
 
+        //  Initialise the Wisol module.  Must be done in background or the program will pause forever.
+        control.inBackground(function () {
             //  Initialise the Wisol module. 
             const msg = createSensorMsg(sigfox.BEGIN_SENSOR_NAME, 0)
             ////debug_println("setupSigfox 1")  ////
