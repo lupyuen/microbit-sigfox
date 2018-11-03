@@ -1,6 +1,7 @@
 namespace sigfox {
     // From wisol.h
     export const MAX_NETWORK_CMD_LIST_SIZE = 5
+
     // Defines a Wisol AT command string, to be sent via
     // UART Task. Sequence is sendData + payload +
     // sendData2
@@ -11,6 +12,7 @@ namespace sigfox {
         sendData2: string;  //  Second command string to be sent, in F() flash memory. 
         processFunc: (context: NetworkContext, response: string) => boolean;  //  Function to process the response, NULL if none.
     }
+
     // Network Task maintains this context in the task
     // data.
     export interface NetworkContext {
@@ -38,6 +40,7 @@ namespace sigfox {
         cmdList: NetworkCmd[];  //  List of Wisol AT commands being sent.
         cmdIndex: number;  //  Index of cmdList being sent.
     }
+
     export interface StepArgs {
         list: NetworkCmd[];
         listSize: number;
@@ -55,12 +58,13 @@ namespace sigfox {
         payload: null,
         sendData2: null
     };
+
     let successEvent: Evt_t = null
     let failureEvent: Evt_t = null
     let sendSemaphore: Sem_t = {}
     let cmdList: NetworkCmd[] = []
     let uartMsg: UARTMsg = null
-    let responseMsg: SensorMsg = null
+    let responseMsg: Msg_t = null
 
     //% block
     export function network_task(task_id: number, task_context: Context_t): void {
@@ -78,6 +82,7 @@ namespace sigfox {
         task_open();  //  Start of the task. Must be matched with task_close().  
         if (!successEvent) { successEvent = event_create(); }  //  Create event for UART Task to indicate success.
         if (!failureEvent) { failureEvent = event_create(); }  //  Another event to indicate failure.
+        if (!responseMsg) { responseMsg = createSensorMsg(RESPONSE_SENSOR_NAME); }  //  UART Task sends this message for a pending response received.
 
         for (; ;) {  //  Receive the next sensor data message.
             let msg_t = msg_receive(os_get_running_tid());
@@ -471,15 +476,17 @@ namespace sigfox {
         context.downlinkData = response2;
         return true;
     }
+
     let uartData: string;
     let cmdData: string;
+
     function convertCmdToUART(
         cmd: NetworkCmd,
         context: NetworkContext,
         uartMsg: UARTMsg,
         successEvent0: Evt_t,
         failureEvent0: Evt_t,
-        responseMsg: SensorMsg,
+        responseMsg: Msg_t,
         responseTaskID: number): void {
         //  Convert the Wisol command into a UART message.
         uartData = "";  //  Clear the dest buffer.
@@ -497,7 +504,7 @@ namespace sigfox {
             uartData = uartData + cmd.payload;
             uartMsg.timeout = UPLINK_TIMEOUT;  //  Increase timeout for uplink.
             //  If there is payload to send, send the response message when sending is completed.
-            uartMsg.responseMsg = <Msg_t>{ sensorMsg: responseMsg };
+            uartMsg.responseMsg = responseMsg;
             uartMsg.responseTaskID = responseTaskID;
         }
         if (cmd.sendData2) {

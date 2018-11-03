@@ -68,10 +68,8 @@ namespace sigfox {
             const marker = String.fromCharCode(ctx().msg.markerChar);
             ctx().response = "";
 
-            ////serial.writeLine(">> " + ctx().msg.sendData);
-            serial.writeLine(">> " + "[" + ctx().msg.markerChar + " / " +
-                ctx().msg.expectedMarkerCount + "] " +
-                ctx().msg.sendData);
+            //  Display on debug console the Wisol command to be sent.
+            serial.writeLine(">> " + ctx().msg.sendData);
 
             //  Switch to TX=Pin P0, RX=Pin P1 to write to Wisol module.
             serial.redirect(SerialPin.P0, SerialPin.P1, 9600);
@@ -81,7 +79,7 @@ namespace sigfox {
             serial.writeString("AT\r");
             serial.readUntil(marker);  //  Ignore the response.
 
-            //  Send the actual command.
+            //  Send the actual command to Wisol module.
             serial.writeString(ctx().msg.sendData);
 
             //  Receive data until the expected number of markers have been seen.
@@ -101,12 +99,13 @@ namespace sigfox {
 
             //  Switch back to USB to write to debug console.
             serial.redirectToUSB();
-            //  Display the received response.  Encode any special characters.
+
+            //  Display the received response on debug console.  Encode any special characters.
             serial.writeLine("<< " + normalise_text(ctx().response));
 
             if (ctx().msg.responseMsg) {
                 //  If caller has requested for response message, then send it instead of event.
-                serial.writeLine("uart_task: response msg"); ////
+                ////serial.writeLine("uart_task: response msg"); ////
                 msg_post(ctx().msg.responseTaskID, ctx().msg.responseMsg);
             } else if (ctx().status) {
                 //  If no error, trigger the success event to caller.
