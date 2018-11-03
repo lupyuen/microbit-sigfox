@@ -101,11 +101,11 @@ namespace sigfox {
             } else if (ctx().status) {
                 //  If no error, trigger the success event to caller.
                 //  The caller can read the response from the context.response.
-                serial.writeLine("uart_task: success"); ////
+                ////serial.writeLine("uart_task: success"); ////
                 event_signal(ctx().msg.successEvent);
             } else {
                 //  If we hit an error, trigger the failure event to the caller.
-                serial.writeLine("uart_task: failure"); ////
+                serial.writeLine("***** uart_task: failure"); ////
                 event_signal(ctx().msg.failureEvent);  //  Trigger the failure event.
             }
 

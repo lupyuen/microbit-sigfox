@@ -102,9 +102,11 @@ namespace sigfox {
             sem_wait(sendSemaphore);  //  Wait until no other message is being sent. Then lock the semaphore.
             debug(F("net >> Got net"));
 
+            /*
             cmdList.forEach(function (value: NetworkCmd, index: number) {
                 debug("cmdList[]=", value.sendData);////            
             })
+            */
 
             //  Init the context.
             ctx().status = true;            //  Assume no error.
@@ -125,9 +127,9 @@ namespace sigfox {
                 if (!cmd.sendData) { break; }     //  If no more commands to send, stop.
 
                 //  Convert Wisol command to UART command.
-                debug("cmd1 ", cmd.sendData);////            
+                ////debug("cmd1 ", cmd.sendData);////            
                 convertCmdToUART(cmd, ctx(), uartMsg, successEvent, failureEvent, responseMsg, os_get_running_tid());
-                debug("cmd2 ", cmd.sendData);////            
+                ////debug("cmd2 ", cmd.sendData);////            
                 ctx().lastSend = millis() + uartMsg.timeout;  //  Estimate last send time for the next command.
                 ctx().pendingProcessFunc = cmd.processFunc;   //  Call this function to process response later.
 
