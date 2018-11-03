@@ -23,15 +23,16 @@ namespace sigfox {
         network_task_id = network_setup(country)
         debug_println("setupSigfox")  ////
 
-        //  Initialise the Wisol module.
-        const msg = createSensorMsg(sigfox.BEGIN_SENSOR_NAME, 0)
-        debug_println("setupSigfox 1")  ////
-        msg_post(network_task_id, msg)
-        debug_println("setupSigfox 2")  ////
+        //  Initialise the Wisol module.  Must be done in background or the program will pause forever.
+        control.inBackground(function () {
+            const msg = createSensorMsg(sigfox.BEGIN_SENSOR_NAME, 0)
+            debug_println("setupSigfox 1")  ////
+            msg_post(network_task_id, msg)
+            debug_println("setupSigfox 2")  ////
+        })
 
         //  Wait a while for Wisol module to be initialised.
         basic.pause(5 * 1000)
-
         debug_println("setupSigfox: Done")  ////
     }
 
