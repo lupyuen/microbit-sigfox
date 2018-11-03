@@ -80,9 +80,16 @@ namespace sigfox {
 
             //  Receive data until the expected number of markers have been seen.
             for (let i = 0; i < ctx().msg.expectedMarkerCount; i++) {
-                ////const line = "OK";
-                const line = serial.readUntil(marker);
-                ctx().response = ctx().response + line + marker;
+                ////let line = "OK";
+                //  Read one line until end-of-line marker "\r" is seen.
+                let line = serial.readUntil(marker);
+                //  If response starts with "\n", remove the newline.
+                if (line.length > 0 && line[0] === "\n") {
+                    line = line.substr(1, line.length - 1);
+                }
+                //  Delimit the lines by the marker.
+                if (ctx().response.length > 0) { ctx().response = ctx().response + marker; }
+                ctx().response = ctx().response + line;
             }
             ctx().status = true; ////TODO
 
