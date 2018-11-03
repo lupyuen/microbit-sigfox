@@ -62,15 +62,13 @@ namespace sigfox {
             const marker = String.fromCharCode(ctx().msg.markerChar);
             ctx().response = "";
 
-            //  TODO: Call debug_flush() before sending data.
             ////serial.writeLine(">> " + ctx().msg.sendData);
             serial.writeLine(">> " + "[" + ctx().msg.markerChar + " / " +
                 ctx().msg.expectedMarkerCount + "] " +
                 ctx().msg.sendData);
 
-            ////basic.pause(5 * 1000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
+            //  Switch to TX=Pin P0, RX=Pin P1 to write to Wisol module.
             serial.redirect(SerialPin.P0, SerialPin.P1, 9600);
-            ////basic.pause(5 * 1000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
 
             //  First transmission is always corrupted. We send a dummy command as first transmission.
             basic.pause(0);  //  Must pause 0 seconds before writing to serial port or it gets garbled.
@@ -80,7 +78,7 @@ namespace sigfox {
             //  Send the actual command.
             serial.writeString(ctx().msg.sendData);
 
-            ////ctx().response = "OK";
+            //  Receive data until the expected number of markers have been seen.
             for (let i = 0; i < ctx().msg.expectedMarkerCount; i++) {
                 ////const line = "OK";
                 const line = serial.readUntil(marker);
@@ -88,11 +86,8 @@ namespace sigfox {
             }
             ctx().status = true; ////TODO
 
-            ////basic.pause(5 * 1000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
+            //  Switch back to USB to write to debug console.
             serial.redirectToUSB();
-            ////basic.pause(5 * 1000);  //  Must pause 2 seconds before writing to serial port or it gets garbled.
-
-            serial.writeLine("<< " + ctx().response);
 
             if (ctx().msg.responseMsg) {
                 //  If caller has requested for response message, then send it instead of event.
