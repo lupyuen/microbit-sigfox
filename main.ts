@@ -1,7 +1,7 @@
-let lig = 0
-let cmp = 0
 let tmp = 0
-sigfox.setupSigfox(sigfox.Country.COUNTRY_SG, ["tmp", "lig", "cmp"])
+let lig = 0
+let acl = 0
+sigfox.setupSigfox(sigfox.Country.COUNTRY_SG, ["tmp", "lig", "acl"])
 
 basic.forever(function () {
 
@@ -23,13 +23,11 @@ control.inBackground(function () {
     }
 })
 
-/*
 control.inBackground(function () {
     while (true) {
-        cmp = input.compassHeading()
-        sigfox.sendToSigfox("cmp", cmp)
+        acl = input.acceleration(Dimension.Strength)
+        sigfox.sendToSigfox("acl", acl)
         basic.pause(20000)
     }
 })
-*/
 
