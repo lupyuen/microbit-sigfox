@@ -3,17 +3,37 @@
     <variable type="" id="WrcNdx_n;OR$gK4FM`x@">tmp</variable>
     <variable type="" id="9vh!N}f9GgZVuCBpn};}">lig</variable>
     <variable type="" id="Mi+zV-CMnny3P=)$O_~?">acl</variable>
+    <variable type="" id="t;oxK4LY*0(N5ZDzuq~Q">text list</variable>
   </variables>
-  <block type="pxt-on-start" x="6" y="9">
+  <block type="pxt-on-start" x="2" y="6">
     <statement name="HANDLER">
-      <block type="typescript_statement" editable="false">
-        <mutation line0="sigfox.setupSigfox(sigfox.Country.COUNTRY_SG, [&quot;tmp&quot;, &quot;lig&quot;, &quot;acl&quot;])" numlines="1"></mutation>
-        <field name="LINE0">sigfox.setupSigfox(sigfox.Country.COUNTRY_SG, ["tmp", "lig", "acl"])</field>
+      <block type="sigfox_setupSigfox">
+        <field name="country">sigfox.Country.COUNTRY_SG</field>
+        <value name="sendSensors">
+          <block type="lists_create_with">
+            <mutation items="3"></mutation>
+            <value name="ADD0">
+              <shadow type="text">
+                <field name="TEXT">tmp</field>
+              </shadow>
+            </value>
+            <value name="ADD1">
+              <shadow type="text">
+                <field name="TEXT">lig</field>
+              </shadow>
+            </value>
+            <value name="ADD2">
+              <shadow type="text">
+                <field name="TEXT">acl</field>
+              </shadow>
+            </value>
+          </block>
+        </value>
       </block>
     </statement>
   </block>
-  <block type="device_forever" x="760" y="0"></block>
-  <block type="control_in_background" x="0" y="139">
+  <block type="device_forever" x="747" y="0"></block>
+  <block type="control_in_background" x="0" y="151">
     <statement name="HANDLER">
       <block type="device_while">
         <value name="COND">
@@ -58,7 +78,7 @@
       </block>
     </statement>
   </block>
-  <block type="control_in_background" x="425" y="130">
+  <block type="control_in_background" x="410" y="154">
     <statement name="HANDLER">
       <block type="device_while">
         <value name="COND">
@@ -103,7 +123,7 @@
       </block>
     </statement>
   </block>
-  <block type="control_in_background" x="206" y="414">
+  <block type="control_in_background" x="202" y="410">
     <statement name="HANDLER">
       <block type="device_while">
         <value name="COND">
