@@ -5,7 +5,11 @@ Tested with the Sigfox Wisol Breakout Board by Upton Lai:
 
 https://www.tindie.com/products/Upton/breakout-board-of-wisol-module-for-sigfox-network/
 
-## Log
+Check out the article:
+
+https://medium.com/@ly.lee/connect-bbc-micro-bit-to-sigfox-4d1603d19350
+
+## Sample Debug Console Log
 
 ```
 net >> Wait for net
